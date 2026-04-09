@@ -544,6 +544,21 @@ def get_ha_ai_context_preview() -> dict:
 
 
 class RequestHandler(BaseHTTPRequestHandler):
+    def _normalize_request_path(self, path: str) -> str:
+        """Best-effort normalization for ingress-prefixed paths."""
+        clean_path = path.split("?", 1)[0]
+
+        ingress_prefix = "/api/hassio_ingress/"
+        if clean_path.startswith(ingress_prefix):
+            remainder = clean_path[len(ingress_prefix) :]
+            # Expected: <token>/<target-path>
+            parts = remainder.split("/", 1)
+            if len(parts) == 2:
+                target = "/" + parts[1]
+                return target if target != "//" else "/"
+
+        return clean_path
+
     def _send_json(self, payload: dict, status: HTTPStatus = HTTPStatus.OK) -> None:
         data = json.dumps(payload).encode("utf-8")
         self.send_response(status)
@@ -565,15 +580,16 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(content)
 
     def do_GET(self) -> None:  # noqa: N802
-        print(f"GET {self.path}")
+        normalized_path = self._normalize_request_path(self.path)
+        print(f"GET {self.path} -> {normalized_path}")
 
-        if self.path == "/health":
+        if normalized_path == "/health":
             self._send_json({"status": "ok"})
             return
-        if self.path == "/api/info":
+        if normalized_path == "/api/info":
             self._send_json(APP_INFO)
             return
-        if self.path == "/api/system":
+        if normalized_path == "/api/system":
             self._send_json(
                 {
                     "name": APP_NAME,
@@ -584,41 +600,41 @@ class RequestHandler(BaseHTTPRequestHandler):
                 }
             )
             return
-        if self.path == "/api/ha-base":
+        if normalized_path == "/api/ha-base":
             self._send_json(get_ha_base_info())
             return
-        if self.path == "/api/ha-detect":
+        if normalized_path == "/api/ha-detect":
             self._send_json(get_ha_detect_info())
             return
-        if self.path == "/api/ha-core-check":
+        if normalized_path == "/api/ha-core-check":
             self._send_json(get_ha_core_check_info())
             return
-        if self.path == "/api/ha-capabilities":
+        if normalized_path == "/api/ha-capabilities":
             self._send_json(get_ha_capabilities_info())
             return
-        if self.path == "/api/ha-metadata-preview":
+        if normalized_path == "/api/ha-metadata-preview":
             self._send_json(get_ha_metadata_preview())
             return
-        if self.path == "/api/ha-domain-preview":
+        if normalized_path == "/api/ha-domain-preview":
             self._send_json(get_ha_domain_preview())
             return
-        if self.path == "/api/ha-structure-preview":
+        if normalized_path == "/api/ha-structure-preview":
             self._send_json(get_ha_structure_preview())
             return
 
-        if self.path == "/api/ha-logic-preview":
+        if normalized_path == "/api/ha-logic-preview":
             self._send_json(get_ha_logic_preview())
             return
-        if self.path == "/api/ha-dashboard-preview":
+        if normalized_path == "/api/ha-dashboard-preview":
             self._send_json(get_ha_dashboard_preview())
             return
-        if self.path == "/api/ha-ai-context-preview":
+        if normalized_path == "/api/ha-ai-context-preview":
             self._send_json(get_ha_ai_context_preview())
             return
-        if self.path in ("/", "/index.html"):
+        if normalized_path in ("/", "/index.html"):
             self._send_file(WEB_DIR / "index.html", "text/html; charset=utf-8")
             return
-        if self.path == "/styles.css":
+        if normalized_path == "/styles.css":
             self._send_file(WEB_DIR / "styles.css", "text/css; charset=utf-8")
             return
         self.send_error(HTTPStatus.NOT_FOUND)
