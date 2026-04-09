@@ -1,9 +1,9 @@
 # Review Bundle
 
 ## Kurz-Zusammenfassung
-- Kleine interne Bereinigung: neue gemeinsame Helper-Funktion `load_states_snapshot_if_200()` zur sicheren Wiederverwendung des `/api/states`-Loads bei HTTP 200.
-- Domain/Structure/Logic Preview nutzen diese gemeinsame States-Snapshot-Logik; Verhalten und Response-Formate bleiben unverändert.
-- Frontend minimal robuster: neue `runPreviewLoad(...)`-Hülle, damit ein unerwarteter Fehler in einem Loader die restlichen Bereiche nicht stoppt.
+- Frontend ingress-kompatibel angepasst: absolute Pfade (`/styles.css`, `/api/...`) auf relative Pfade (`./styles.css`, `./api/...`) umgestellt.
+- Backend minimal erweitert um kurzes GET-Request-Logging (`GET <path>`), damit eingehende Pfade im Add-on-Log sichtbar sind.
+- Keine neuen Features/Endpoints; bestehende Response-Formate unverändert.
 
 ## Geänderte Datei: `ha_ai_context_exporter/rootfs/app/main.py` (vollständiger Inhalt)
 ```python
@@ -574,6 +574,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(content)
 
     def do_GET(self) -> None:  # noqa: N802
+        print(f"GET {self.path}")
+
         if self.path == "/health":
             self._send_json({"status": "ok"})
             return
@@ -652,7 +654,7 @@ if __name__ == "__main__":
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>HA AI Context Exporter</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <main class="container">
@@ -726,7 +728,7 @@ if __name__ == "__main__":
         const target = document.getElementById("app-info");
 
         try {
-          const response = await fetch("/api/info");
+          const response = await fetch("./api/info");
           if (!response.ok) {
             throw new Error(`Request failed with status ${response.status}`);
           }
@@ -742,7 +744,7 @@ if __name__ == "__main__":
         const target = document.getElementById("system-info");
 
         try {
-          const response = await fetch("/api/system");
+          const response = await fetch("./api/system");
           if (!response.ok) {
             throw new Error(`Request failed with status ${response.status}`);
           }
@@ -759,7 +761,7 @@ if __name__ == "__main__":
         const target = document.getElementById("ha-detect-info");
 
         try {
-          const response = await fetch("/api/ha-detect");
+          const response = await fetch("./api/ha-detect");
           if (!response.ok) {
             throw new Error(`Request failed with status ${response.status}`);
           }
@@ -776,7 +778,7 @@ if __name__ == "__main__":
         const target = document.getElementById("ha-core-check-info");
 
         try {
-          const response = await fetch("/api/ha-core-check");
+          const response = await fetch("./api/ha-core-check");
           if (!response.ok) {
             throw new Error(`Request failed with status ${response.status}`);
           }
@@ -793,7 +795,7 @@ if __name__ == "__main__":
         const target = document.getElementById("ha-capabilities-info");
 
         try {
-          const response = await fetch("/api/ha-capabilities");
+          const response = await fetch("./api/ha-capabilities");
           if (!response.ok) {
             throw new Error(`Request failed with status ${response.status}`);
           }
@@ -810,7 +812,7 @@ if __name__ == "__main__":
         const target = document.getElementById("ha-metadata-preview-info");
 
         try {
-          const response = await fetch("/api/ha-metadata-preview");
+          const response = await fetch("./api/ha-metadata-preview");
           if (!response.ok) {
             throw new Error(`Request failed with status ${response.status}`);
           }
@@ -827,7 +829,7 @@ if __name__ == "__main__":
         const target = document.getElementById("ha-domain-preview-info");
 
         try {
-          const response = await fetch("/api/ha-domain-preview");
+          const response = await fetch("./api/ha-domain-preview");
           if (!response.ok) {
             throw new Error(`Request failed with status ${response.status}`);
           }
@@ -860,7 +862,7 @@ if __name__ == "__main__":
         const target = document.getElementById("ha-structure-preview-info");
 
         try {
-          const response = await fetch("/api/ha-structure-preview");
+          const response = await fetch("./api/ha-structure-preview");
           if (!response.ok) {
             throw new Error(`Request failed with status ${response.status}`);
           }
@@ -877,7 +879,7 @@ if __name__ == "__main__":
         const target = document.getElementById("ha-logic-preview-info");
 
         try {
-          const response = await fetch("/api/ha-logic-preview");
+          const response = await fetch("./api/ha-logic-preview");
           if (!response.ok) {
             throw new Error(`Request failed with status ${response.status}`);
           }
@@ -894,7 +896,7 @@ if __name__ == "__main__":
         const target = document.getElementById("ha-dashboard-preview-info");
 
         try {
-          const response = await fetch("/api/ha-dashboard-preview");
+          const response = await fetch("./api/ha-dashboard-preview");
           if (!response.ok) {
             throw new Error(`Request failed with status ${response.status}`);
           }
@@ -914,7 +916,7 @@ if __name__ == "__main__":
         const target = document.getElementById("ha-ai-context-preview-info");
 
         try {
-          const response = await fetch("/api/ha-ai-context-preview");
+          const response = await fetch("./api/ha-ai-context-preview");
           if (!response.ok) {
             throw new Error(`Request failed with status ${response.status}`);
           }
@@ -934,7 +936,7 @@ if __name__ == "__main__":
         const target = document.getElementById("ha-base-info");
 
         try {
-          const response = await fetch("/api/ha-base");
+          const response = await fetch("./api/ha-base");
           if (!response.ok) {
             throw new Error(`Request failed with status ${response.status}`);
           }
@@ -973,6 +975,6 @@ if __name__ == "__main__":
 ```
 
 ## Annahmen / Einschränkungen
-- Die neue Helper-Funktion reduziert Duplikate für `/api/states`, führt aber bewusst keinen Persistenz-Cache ein.
-- Discovery-/Preview-Endpunkte bleiben read-only und konservativ (keine Tokens/Auth-Header, keine Supervisor-API, kein YAML, keine Persistenz).
-- Response-Formate der bestehenden Endpunkte wurden nicht funktional erweitert oder reduziert.
+- Relative Pfade sind für Home Assistant Ingress robuster, weil der Ingress-Präfix im Browser-Pfad berücksichtigt wird.
+- Das Logging ist bewusst minimal (eine knappe Zeile pro GET) und nicht persistent.
+- Keine Änderungen an Endpoint-Semantik oder Payload-Formaten.

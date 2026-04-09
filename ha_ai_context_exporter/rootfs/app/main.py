@@ -565,6 +565,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(content)
 
     def do_GET(self) -> None:  # noqa: N802
+        print(f"GET {self.path}")
+
         if self.path == "/health":
             self._send_json({"status": "ok"})
             return
