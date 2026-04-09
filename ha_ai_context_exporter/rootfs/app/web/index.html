@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HA AI Context Exporter</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>HA AI Context Exporter</h1>
+      <p>Initial scaffold for future Home Assistant AI export features.</p>
+      <button type="button" disabled>Start export (coming soon)</button>
+
+      <section aria-live="polite">
+        <h2>App info</h2>
+        <p id="app-info">Loading app info...</p>
+      </section>
+
+      <section aria-live="polite">
+        <h2>System info</h2>
+        <p id="system-info">Loading system info...</p>
+      </section>
+    </main>
+
+    <script>
+      async function loadAppInfo() {
+        const target = document.getElementById("app-info");
+
+        try {
+          const response = await fetch("/api/info");
+          if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+          }
+
+          const data = await response.json();
+          target.textContent = `Name: ${data.name} | Version: ${data.version} | Status: ${data.status}`;
+        } catch (error) {
+          target.textContent = "Failed to load app info.";
+        }
+      }
+
+      async function loadSystemInfo() {
+        const target = document.getElementById("system-info");
+
+        try {
+          const response = await fetch("/api/system");
+          if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+          }
+
+          const data = await response.json();
+          target.textContent = `Name: ${data.name} | Version: ${data.version} | Port: ${data.port} | In container: ${data.in_container} | Working directory: ${data.working_directory}`;
+        } catch (error) {
+          target.textContent = "Failed to load system info.";
+        }
+      }
+
+      loadAppInfo();
+      loadSystemInfo();
+    </script>
+  </body>
+</html>
