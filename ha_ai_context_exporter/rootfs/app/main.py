@@ -9,14 +9,30 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
+APP_NAME = "HA AI Context Exporter"
+APP_VERSION = "0.1.0"
 HOST = "0.0.0.0"
 PORT = int(os.getenv("PORT", "8099"))
 WEB_DIR = Path(__file__).resolve().parent / "web"
 APP_INFO = {
-    "name": "HA AI Context Exporter",
-    "version": "0.1.0",
+    "name": APP_NAME,
+    "version": APP_VERSION,
     "status": "scaffold-ready",
 }
+
+
+def is_running_in_container() -> bool:
+    """Best-effort container detection without external dependencies."""
+    if Path("/.dockerenv").exists():
+        return True
+
+    cgroup_path = Path("/proc/1/cgroup")
+    if cgroup_path.exists():
+        content = cgroup_path.read_text(encoding="utf-8", errors="ignore")
+        markers = ("docker", "containerd", "kubepods", "podman")
+        return any(marker in content for marker in markers)
+
+    return False
 
 
 class RequestHandler(BaseHTTPRequestHandler):
@@ -49,6 +65,18 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         if self.path == "/api/info":
             self._send_json(APP_INFO)
+            return
+
+        if self.path == "/api/system":
+            self._send_json(
+                {
+                    "name": APP_NAME,
+                    "version": APP_VERSION,
+                    "port": PORT,
+                    "in_container": is_running_in_container(),
+                    "working_directory": os.getcwd(),
+                }
+            )
             return
 
         if self.path in ("/", "/index.html"):
