@@ -543,6 +543,125 @@ def get_ha_ai_context_preview() -> dict:
     }
 
 
+
+def get_ai_export_preview() -> dict:
+    """Return a structured preview payload for a future AI export."""
+    structure = get_ha_structure_preview()
+    logic = get_ha_logic_preview()
+    dashboard = get_ha_dashboard_preview()
+    domain = get_ha_domain_preview()
+
+    entities_count = structure.get("entities_count")
+    if isinstance(entities_count, int):
+        if entities_count < 100:
+            system_size = "small"
+        elif entities_count < 500:
+            system_size = "medium"
+        else:
+            system_size = "large"
+    else:
+        system_size = "unknown"
+
+    return {
+        "tool": {
+            "name": APP_NAME,
+            "version": APP_VERSION,
+            "addon_slug": APP_SLUG,
+        },
+        "environment": {
+            "container": is_running_in_container(),
+            "data_path": Path("/data").exists(),
+            "config_path": Path("/config").exists(),
+            "api_available": bool(
+                structure.get("entities_available")
+                or domain.get("states_endpoint_reachable")
+            ),
+        },
+        "system_summary": {
+            "system_size": system_size,
+            "entities": structure.get("entities_count"),
+            "devices": structure.get("devices_count"),
+            "areas": structure.get("areas_count"),
+        },
+        "logic_summary": {
+            "automations": logic.get("automations_count"),
+            "scripts": logic.get("scripts_count"),
+            "scenes": logic.get("scenes_count"),
+        },
+        "dashboard_summary": {
+            "dashboards": dashboard.get("dashboards_count"),
+            "views": dashboard.get("total_views_count"),
+            "cards": dashboard.get("total_cards_count"),
+        },
+        "top_domains": domain.get("top_domains", []),
+    }
+
+
+def get_ha_access_preview() -> dict:
+    """Return a compact, read-only preview of currently accessible HA data sources."""
+    container_running = is_running_in_container()
+    has_data_path = Path("/data").exists()
+    has_app_path = Path("/app").exists()
+    has_config_path = Path("/config").exists()
+
+    core_host_candidate = None
+    core_root_reachable = False
+    states_endpoint_reachable = False
+    services_endpoint_reachable = False
+    dashboards_endpoint_reachable = False
+    lovelace_config_endpoint_reachable = False
+
+    for candidate in CORE_URL_CANDIDATES:
+        root_probe = probe_core_root(candidate)
+        if not root_probe["reachable"]:
+            continue
+
+        core_host_candidate = candidate
+        core_root_reachable = True
+        states_endpoint_reachable = probe_states_endpoint(candidate)["reachable"]
+        services_endpoint_reachable = probe_services_endpoint(candidate)["reachable"]
+        dashboards_endpoint_reachable = probe_dashboards_endpoint(candidate)["reachable"]
+        lovelace_config_endpoint_reachable = probe_lovelace_config_endpoint(candidate)["reachable"]
+        break
+
+    file_config_access_possible = has_config_path
+    api_based_analysis_possible = core_root_reachable and (
+        states_endpoint_reachable or services_endpoint_reachable
+    )
+    dashboard_analysis_possible = dashboards_endpoint_reachable or lovelace_config_endpoint_reachable
+
+    if file_config_access_possible and api_based_analysis_possible and dashboard_analysis_possible:
+        export_prerequisites_summary = "file+api+dashboard-ready"
+    elif api_based_analysis_possible and dashboard_analysis_possible:
+        export_prerequisites_summary = "api+dashboard-ready (no /config)"
+    elif api_based_analysis_possible:
+        export_prerequisites_summary = "api-only-ready"
+    elif file_config_access_possible:
+        export_prerequisites_summary = "file-only-ready"
+    else:
+        export_prerequisites_summary = "limited-access"
+
+    return {
+        "name": APP_NAME,
+        "version": APP_VERSION,
+        "addon_slug": APP_SLUG,
+        "container_running": container_running,
+        "has_data_path": has_data_path,
+        "has_app_path": has_app_path,
+        "has_config_path": has_config_path,
+        "core_host_candidate": core_host_candidate,
+        "core_root_reachable": core_root_reachable,
+        "states_endpoint_reachable": states_endpoint_reachable,
+        "services_endpoint_reachable": services_endpoint_reachable,
+        "dashboards_endpoint_reachable": dashboards_endpoint_reachable,
+        "lovelace_config_endpoint_reachable": lovelace_config_endpoint_reachable,
+        "file_config_access_possible": file_config_access_possible,
+        "api_based_analysis_possible": api_based_analysis_possible,
+        "dashboard_analysis_possible": dashboard_analysis_possible,
+        "export_prerequisites_summary": export_prerequisites_summary,
+    }
+
+
 class RequestHandler(BaseHTTPRequestHandler):
     def _normalize_request_path(self, path: str) -> str:
         """Best-effort normalization for ingress-prefixed paths."""
@@ -630,6 +749,12 @@ class RequestHandler(BaseHTTPRequestHandler):
             return
         if normalized_path == "/api/ha-ai-context-preview":
             self._send_json(get_ha_ai_context_preview())
+            return
+        if normalized_path == "/api/ha-access-preview":
+            self._send_json(get_ha_access_preview())
+            return
+        if normalized_path == "/api/ai-export-preview":
+            self._send_json(get_ai_export_preview())
             return
         if normalized_path in ("/", "/index.html"):
             self._send_file(WEB_DIR / "index.html", "text/html; charset=utf-8")

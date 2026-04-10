@@ -10,7 +10,14 @@
     <main class="container">
       <h1>HA AI Context Exporter</h1>
       <p>Initial scaffold for future Home Assistant AI export features.</p>
+      <p><strong>Live test mode</strong></p>
       <button type="button" disabled>Start export (coming soon)</button>
+
+      <section aria-live="polite">
+        <h2>AI Export Preview</h2>
+        <button id="generate-ai-export-preview" type="button">Generate AI export preview</button>
+        <pre id="ai-export-preview-output">No export generated yet.</pre>
+      </section>
 
       <section aria-live="polite"><h2>App info</h2><p id="app-info">Loading app info...</p></section>
       <section aria-live="polite"><h2>System info</h2><p id="system-info">Loading system info...</p></section>
@@ -24,6 +31,8 @@
       <section aria-live="polite"><h2>Home Assistant logic preview</h2><p id="ha-logic-preview-info">Loading Home Assistant logic preview...</p></section>
       <section aria-live="polite"><h2>Home Assistant dashboard preview</h2><p id="ha-dashboard-preview-info">Loading Home Assistant dashboard preview...</p></section>
       <section aria-live="polite"><h2>AI context preview</h2><p id="ha-ai-context-preview-info">Loading AI context preview...</p></section>
+
+      <section aria-live="polite"><h2>Home Assistant access preview</h2><p id="ha-access-preview-info">Loading Home Assistant access preview...</p></section>
     </main>
 
     <script>
@@ -178,6 +187,28 @@
         }
       }
 
+
+      async function loadHaAccessPreviewInfo() {
+        const target = document.getElementById("ha-access-preview-info");
+        try {
+          const data = await fetchAddonJson("api/ha-access-preview");
+          target.textContent = `container: ${data.container_running} | data path: ${data.has_data_path} | app path: ${data.has_app_path} | config path: ${data.has_config_path} | core candidate: ${data.core_host_candidate} | core reachable: ${data.core_root_reachable} | states reachable: ${data.states_endpoint_reachable} | services reachable: ${data.services_endpoint_reachable} | dashboards reachable: ${data.dashboards_endpoint_reachable} | lovelace config reachable: ${data.lovelace_config_endpoint_reachable} | file_config_access_possible: ${data.file_config_access_possible} | api_based_analysis_possible: ${data.api_based_analysis_possible} | dashboard_analysis_possible: ${data.dashboard_analysis_possible} | export_prerequisites_summary: ${data.export_prerequisites_summary}`;
+        } catch {
+          target.textContent = "Failed to load Home Assistant access preview.";
+        }
+      }
+
+      async function generateAiExportPreview() {
+        const output = document.getElementById("ai-export-preview-output");
+        output.textContent = "Generating...";
+        try {
+          const data = await fetchAddonJson("api/ai-export-preview");
+          output.textContent = JSON.stringify(data, null, 2);
+        } catch {
+          output.textContent = "Failed to generate AI export preview.";
+        }
+      }
+
       async function loadHaBaseInfo() {
         const target = document.getElementById("ha-base-info");
         try {
@@ -197,6 +228,10 @@
         }
       }
 
+      document
+        .getElementById("generate-ai-export-preview")
+        .addEventListener("click", generateAiExportPreview);
+
       applyStylesheet();
       runPreviewLoad(loadAppInfo);
       runPreviewLoad(loadSystemInfo);
@@ -210,6 +245,7 @@
       runPreviewLoad(loadHaLogicPreviewInfo);
       runPreviewLoad(loadHaDashboardPreviewInfo);
       runPreviewLoad(loadHaAiContextPreviewInfo);
+      runPreviewLoad(loadHaAccessPreviewInfo);
     </script>
   </body>
 </html>
