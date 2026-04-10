@@ -1,0 +1,16 @@
+name: "HA AI Context Exporter"
+version: "0.0.1"
+slug: "ha_ai_context_exporter"
+description: "Minimal scaffold for future Home Assistant AI context export features"
+arch:
+  - amd64
+  - aarch64
+  - armv7
+startup: services
+boot: manual
+ingress: true
+ingress_port: 8099
+panel_icon: mdi:robot-outline
+init: false
+options: {}
+schema: {}
