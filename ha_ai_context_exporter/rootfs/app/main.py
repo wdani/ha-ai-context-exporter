@@ -7,9 +7,18 @@ import json
 import os
 import urllib.error
 import urllib.request
+import urllib.parse
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+
+from export.export_controller import ExportValidationError, build_export_payload
+from export.export_renderers import (
+    build_download_filename,
+    render_export_json_bytes,
+    render_export_markdown_bytes,
+    validate_download_format,
+)
 
 APP_NAME = "HA AI Context Exporter"
 APP_VERSION = "0.1.0"
@@ -27,6 +36,11 @@ APP_INFO = {
     "version": APP_VERSION,
     "status": "scaffold-ready",
 }
+
+
+def get_app_info() -> dict:
+    """Return basic app metadata for reuse in other endpoints."""
+    return dict(APP_INFO)
 
 
 def is_running_in_container() -> bool:
@@ -698,6 +712,54 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(content)
 
+    def _send_query_error(self, message: str) -> None:
+        self._send_json(
+            {
+                "error": "invalid_query_parameter",
+                "message": message,
+            },
+            status=HTTPStatus.BAD_REQUEST,
+        )
+
+    def _send_download_bytes(self, content: bytes, content_type: str, filename: str) -> None:
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(content)))
+        self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+        self.end_headers()
+        self.wfile.write(content)
+
+    def _get_single_query_value(self, query: dict[str, list[str]], name: str) -> str | None:
+        values = query.get(name)
+        if values is None:
+            return None
+        if len(values) != 1:
+            raise ExportValidationError(
+                f"Query parameter '{name}' must be provided once."
+            )
+        return values[0]
+
+    def _build_export_payload_from_query(self, query: dict[str, list[str]]) -> dict:
+        mode = self._get_single_query_value(query, "mode") or "standard"
+        variant = self._get_single_query_value(query, "variant") or "A"
+        categories_raw = self._get_single_query_value(query, "categories")
+
+        return build_export_payload(
+            mode=mode,
+            variant=variant,
+            categories_raw=categories_raw,
+            providers={
+                "get_info": get_app_info,
+                "get_access_preview": get_ha_access_preview,
+                "get_ai_context_preview": get_ha_ai_context_preview,
+                "get_structure_preview": get_ha_structure_preview,
+                "get_logic_preview": get_ha_logic_preview,
+                "get_dashboard_preview": get_ha_dashboard_preview,
+                "get_domain_preview": get_ha_domain_preview,
+                "addon_slug": APP_SLUG,
+            },
+        )
+
     def do_GET(self) -> None:  # noqa: N802
         normalized_path = self._normalize_request_path(self.path)
         print(f"GET {self.path} -> {normalized_path}")
@@ -706,7 +768,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._send_json({"status": "ok"})
             return
         if normalized_path == "/api/info":
-            self._send_json(APP_INFO)
+            self._send_json(get_app_info())
             return
         if normalized_path == "/api/system":
             self._send_json(
@@ -755,6 +817,39 @@ class RequestHandler(BaseHTTPRequestHandler):
             return
         if normalized_path == "/api/ai-export-preview":
             self._send_json(get_ai_export_preview())
+            return
+        if normalized_path == "/api/export":
+            parsed_url = urllib.parse.urlparse(self.path)
+            query = urllib.parse.parse_qs(parsed_url.query, keep_blank_values=True)
+            try:
+                payload = self._build_export_payload_from_query(query)
+            except ExportValidationError as error:
+                self._send_query_error(str(error))
+                return
+
+            self._send_json(payload)
+            return
+        if normalized_path == "/api/export/download":
+            parsed_url = urllib.parse.urlparse(self.path)
+            query = urllib.parse.parse_qs(parsed_url.query, keep_blank_values=True)
+            try:
+                payload = self._build_export_payload_from_query(query)
+                requested_format = self._get_single_query_value(query, "format") or "json"
+                download_format = validate_download_format(requested_format)
+                mode = payload.get("meta", {}).get("mode", "standard")
+                variant = payload.get("meta", {}).get("variant", "A")
+                filename = build_download_filename(payload, mode=mode, variant=variant, fmt=download_format)
+            except ExportValidationError as error:
+                self._send_query_error(str(error))
+                return
+
+            if download_format == "json":
+                content = render_export_json_bytes(payload)
+                self._send_download_bytes(content, "application/json", filename)
+                return
+
+            content = render_export_markdown_bytes(payload)
+            self._send_download_bytes(content, "text/markdown; charset=utf-8", filename)
             return
         if normalized_path in ("/", "/index.html"):
             self._send_file(WEB_DIR / "index.html", "text/html; charset=utf-8")
