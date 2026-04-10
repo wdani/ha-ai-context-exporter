@@ -44,6 +44,58 @@ def get_app_info() -> dict:
     return dict(APP_INFO)
 
 
+<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
+
+
+def load_addon_options() -> dict:
+    """Load add-on options from /data/options.json (read-only best effort)."""
+    options_path = Path("/data/options.json")
+    if not options_path.exists():
+        return {}
+    try:
+        data = json.loads(options_path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def get_configured_ha_token() -> str | None:
+    """Return configured HA Long-Lived Access Token, if available."""
+    value = load_addon_options().get("ha_token")
+    if isinstance(value, str):
+        token = value.strip()
+        return token if token else None
+    return None
+
+
+def is_token_configured() -> bool:
+    return get_configured_ha_token() is not None
+
+
+def should_attach_token_to_url(url: str) -> bool:
+    """Allow bearer token only for local Home Assistant core hosts."""
+    parsed = urllib.parse.urlparse(url)
+    host = parsed.hostname or ""
+    port = parsed.port
+    if not host:
+        return False
+
+    allowed_hosts = {"homeassistant", "127.0.0.1", "localhost"}
+    if host not in allowed_hosts:
+        return False
+
+    return (port is None) or (port == 8123)
+
+
+def build_local_get_headers(url: str) -> dict[str, str]:
+    """Build headers for local GET requests without leaking tokens to disallowed targets."""
+    token = get_configured_ha_token()
+    if token and should_attach_token_to_url(url):
+        return {"Authorization": f"Bearer {token}"}
+    return {}
+
+=======
+>>>>>>> main
 def is_running_in_container() -> bool:
     """Best-effort container detection without external dependencies."""
     if Path("/.dockerenv").exists():
@@ -111,7 +163,7 @@ def get_ha_detect_info() -> dict:
 def probe_local_url(url: str, path: str) -> dict:
     """Short unauthenticated local probe request (GET only)."""
     request_url = f"{url.rstrip('/')}{path}"
-    request = urllib.request.Request(request_url, method="GET")
+    request = urllib.request.Request(request_url, method="GET", headers=build_local_get_headers(request_url))
 
     try:
         with urllib.request.urlopen(request, timeout=1.5) as response:
@@ -129,7 +181,7 @@ def probe_local_url(url: str, path: str) -> dict:
 def fetch_json_on_200(url: str, path: str) -> object | None:
     """Fetch JSON payload only when endpoint returns HTTP 200."""
     request_url = f"{url.rstrip('/')}{path}"
-    request = urllib.request.Request(request_url, method="GET")
+    request = urllib.request.Request(request_url, method="GET", headers=build_local_get_headers(request_url))
 
     try:
         with urllib.request.urlopen(request, timeout=1.5) as response:
@@ -212,6 +264,7 @@ def get_ha_core_check_info() -> dict:
         "local_core_candidate_reachable": checked_candidate["reachable"],
         "local_core_candidate_http_status": checked_candidate["http_status"],
         "next_safe_core_step_possible": next_safe_core_step_possible,
+        "token_configured": is_token_configured(),
     }
 
 
@@ -245,6 +298,7 @@ def get_ha_capabilities_info() -> dict:
         "states_endpoint_reachable": states_endpoint_reachable,
         "services_endpoint_reachable": services_endpoint_reachable,
         "safe_to_attempt_metadata_step": safe_to_attempt_metadata_step,
+        "token_configured": is_token_configured(),
     }
 
 
@@ -302,6 +356,7 @@ def get_ha_metadata_preview() -> dict:
         "states_count": states_count,
         "services_domain_count": services_domain_count,
         "home_assistant_version": home_assistant_version,
+        "token_configured": is_token_configured(),
     }
 
 
@@ -344,6 +399,7 @@ def get_ha_domain_preview() -> dict:
         "states_http_status": states_http_status,
         "domain_counts": domain_counts,
         "top_domains": [{"domain": domain, "count": count} for domain, count in top_domains],
+        "token_configured": is_token_configured(),
     }
 
 
@@ -400,6 +456,10 @@ def get_ha_structure_preview() -> dict:
         "areas_count": areas_count,
         "devices_count": devices_count,
         "entities_count": entities_count,
+        "areas_http_status": areas_probe["http_status"] if "areas_probe" in locals() else None,
+        "devices_http_status": devices_probe["http_status"] if "devices_probe" in locals() else None,
+        "entities_http_status": entities_probe["http_status"] if "entities_probe" in locals() else None,
+        "token_configured": is_token_configured(),
     }
 
 
@@ -450,6 +510,7 @@ def get_ha_logic_preview() -> dict:
         "automations_count": automations_count,
         "scripts_count": scripts_count,
         "scenes_count": scenes_count,
+        "token_configured": is_token_configured(),
     }
 
 
@@ -518,6 +579,9 @@ def get_ha_dashboard_preview() -> dict:
         "total_views_count": total_views_count,
         "total_cards_count": total_cards_count,
         "detected_view_types": detected_view_types,
+        "dashboards_http_status": dashboards_probe["http_status"] if "dashboards_probe" in locals() else None,
+        "lovelace_config_http_status": lovelace_config_probe["http_status"] if "lovelace_config_probe" in locals() else None,
+        "token_configured": is_token_configured(),
     }
 
 
@@ -546,6 +610,7 @@ def get_ha_ai_context_preview() -> dict:
         "addon_slug": APP_SLUG,
         "system_size": system_size,
         "entities_count": entities_count,
+        "token_configured": is_token_configured(),
         "devices_count": structure.get("devices_count"),
         "areas_count": structure.get("areas_count"),
         "automations_count": logic.get("automations_count"),
@@ -674,6 +739,7 @@ def get_ha_access_preview() -> dict:
         "api_based_analysis_possible": api_based_analysis_possible,
         "dashboard_analysis_possible": dashboard_analysis_possible,
         "export_prerequisites_summary": export_prerequisites_summary,
+        "token_configured": is_token_configured(),
     }
 
 

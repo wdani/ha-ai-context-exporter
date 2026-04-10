@@ -2,11 +2,19 @@
 
 ## Zusammenfassung
 
+<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
+- Version auf **0.0.2** erhöht und zentral über `rootfs/app/version.py` als Single Source of Truth geführt.
+- `config.yaml` um optionale `ha_token`-Konfiguration (sensibles Passwortfeld) erweitert.
+- Zentrale Auth-GET-Helper in `main.py` ergänzt: Token wird aus `/data/options.json` gelesen, Bearer-Header nur für erlaubte lokale HA-Core-Ziele gesetzt (nicht für Supervisor/externe Hosts).
+- Bestehende Discovery-/Preview-Funktionen weiterverwendet und um tokenbezogene Diagnosefelder erweitert (`token_configured`, zusätzliche HTTP-Status-Felder), ohne neue Endpunkte oder Schreiboperationen.
+- Exportausgabe weiterhin read-only und nun klarer bei Token-Status-Diagnose (`no token configured` vs `token configured but unauthorized`) sowie weiterhin mit konsistenten `status/reason/reachability/readability`, `data_completeness`, `discovery_status`, `warnings`.
+=======
 - Version zentralisiert in `rootfs/app/version.py` und auf `0.0.1` gesetzt (inkl. Nutzung in Backend/API und Export-Payload).
 - Add-on `config.yaml` auf Entwicklungsversionslinie `0.0.1` umgestellt.
 - Export-Ausgabe ehrlicher gemacht: konsistente `status`/`reason`/`reachability`/`readability` Felder in den Export-Kategorien.
 - Export um `data_completeness`, `discovery_status` und stets vorhandene `warnings`-Liste erweitert.
 - Unknown-/Null-Zustände werden jetzt mit erklärendem `reason` ausgewiesen statt nur implizit über `null`.
+>>>>>>> main
 
 ## Vollständige Inhalte aller geänderten Dateien
 
@@ -14,14 +22,22 @@
 ```python
 """Single source of truth for application version."""
 
+<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
+VERSION = "0.0.2"
+=======
 VERSION = "0.0.1"
+>>>>>>> main
 
 ```
 
 ### `ha_ai_context_exporter/config.yaml`
 ```yaml
 name: "HA AI Context Exporter"
+<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
+version: "0.0.2"
+=======
 version: "0.0.1"
+>>>>>>> main
 slug: "ha_ai_context_exporter"
 description: "Minimal scaffold for future Home Assistant AI context export features"
 arch:
@@ -34,8 +50,15 @@ ingress: true
 ingress_port: 8099
 panel_icon: mdi:robot-outline
 init: false
+<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
+options:
+  ha_token: ""
+schema:
+  ha_token: "password?"
+=======
 options: {}
 schema: {}
+>>>>>>> main
 
 ```
 
@@ -87,6 +110,58 @@ def get_app_info() -> dict:
     return dict(APP_INFO)
 
 
+<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
+
+
+def load_addon_options() -> dict:
+    """Load add-on options from /data/options.json (read-only best effort)."""
+    options_path = Path("/data/options.json")
+    if not options_path.exists():
+        return {}
+    try:
+        data = json.loads(options_path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def get_configured_ha_token() -> str | None:
+    """Return configured HA Long-Lived Access Token, if available."""
+    value = load_addon_options().get("ha_token")
+    if isinstance(value, str):
+        token = value.strip()
+        return token if token else None
+    return None
+
+
+def is_token_configured() -> bool:
+    return get_configured_ha_token() is not None
+
+
+def should_attach_token_to_url(url: str) -> bool:
+    """Allow bearer token only for local Home Assistant core hosts."""
+    parsed = urllib.parse.urlparse(url)
+    host = parsed.hostname or ""
+    port = parsed.port
+    if not host:
+        return False
+
+    allowed_hosts = {"homeassistant", "127.0.0.1", "localhost"}
+    if host not in allowed_hosts:
+        return False
+
+    return (port is None) or (port == 8123)
+
+
+def build_local_get_headers(url: str) -> dict[str, str]:
+    """Build headers for local GET requests without leaking tokens to disallowed targets."""
+    token = get_configured_ha_token()
+    if token and should_attach_token_to_url(url):
+        return {"Authorization": f"Bearer {token}"}
+    return {}
+
+=======
+>>>>>>> main
 def is_running_in_container() -> bool:
     """Best-effort container detection without external dependencies."""
     if Path("/.dockerenv").exists():
@@ -154,7 +229,11 @@ def get_ha_detect_info() -> dict:
 def probe_local_url(url: str, path: str) -> dict:
     """Short unauthenticated local probe request (GET only)."""
     request_url = f"{url.rstrip('/')}{path}"
+<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
+    request = urllib.request.Request(request_url, method="GET", headers=build_local_get_headers(request_url))
+=======
     request = urllib.request.Request(request_url, method="GET")
+>>>>>>> main
 
     try:
         with urllib.request.urlopen(request, timeout=1.5) as response:
@@ -172,7 +251,11 @@ def probe_local_url(url: str, path: str) -> dict:
 def fetch_json_on_200(url: str, path: str) -> object | None:
     """Fetch JSON payload only when endpoint returns HTTP 200."""
     request_url = f"{url.rstrip('/')}{path}"
+<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
+    request = urllib.request.Request(request_url, method="GET", headers=build_local_get_headers(request_url))
+=======
     request = urllib.request.Request(request_url, method="GET")
+>>>>>>> main
 
     try:
         with urllib.request.urlopen(request, timeout=1.5) as response:
@@ -255,6 +338,7 @@ def get_ha_core_check_info() -> dict:
         "local_core_candidate_reachable": checked_candidate["reachable"],
         "local_core_candidate_http_status": checked_candidate["http_status"],
         "next_safe_core_step_possible": next_safe_core_step_possible,
+        "token_configured": is_token_configured(),
     }
 
 
@@ -288,6 +372,7 @@ def get_ha_capabilities_info() -> dict:
         "states_endpoint_reachable": states_endpoint_reachable,
         "services_endpoint_reachable": services_endpoint_reachable,
         "safe_to_attempt_metadata_step": safe_to_attempt_metadata_step,
+        "token_configured": is_token_configured(),
     }
 
 
@@ -345,6 +430,7 @@ def get_ha_metadata_preview() -> dict:
         "states_count": states_count,
         "services_domain_count": services_domain_count,
         "home_assistant_version": home_assistant_version,
+        "token_configured": is_token_configured(),
     }
 
 
@@ -387,6 +473,7 @@ def get_ha_domain_preview() -> dict:
         "states_http_status": states_http_status,
         "domain_counts": domain_counts,
         "top_domains": [{"domain": domain, "count": count} for domain, count in top_domains],
+        "token_configured": is_token_configured(),
     }
 
 
@@ -443,6 +530,10 @@ def get_ha_structure_preview() -> dict:
         "areas_count": areas_count,
         "devices_count": devices_count,
         "entities_count": entities_count,
+        "areas_http_status": areas_probe["http_status"] if "areas_probe" in locals() else None,
+        "devices_http_status": devices_probe["http_status"] if "devices_probe" in locals() else None,
+        "entities_http_status": entities_probe["http_status"] if "entities_probe" in locals() else None,
+        "token_configured": is_token_configured(),
     }
 
 
@@ -493,6 +584,7 @@ def get_ha_logic_preview() -> dict:
         "automations_count": automations_count,
         "scripts_count": scripts_count,
         "scenes_count": scenes_count,
+        "token_configured": is_token_configured(),
     }
 
 
@@ -561,6 +653,9 @@ def get_ha_dashboard_preview() -> dict:
         "total_views_count": total_views_count,
         "total_cards_count": total_cards_count,
         "detected_view_types": detected_view_types,
+        "dashboards_http_status": dashboards_probe["http_status"] if "dashboards_probe" in locals() else None,
+        "lovelace_config_http_status": lovelace_config_probe["http_status"] if "lovelace_config_probe" in locals() else None,
+        "token_configured": is_token_configured(),
     }
 
 
@@ -589,6 +684,7 @@ def get_ha_ai_context_preview() -> dict:
         "addon_slug": APP_SLUG,
         "system_size": system_size,
         "entities_count": entities_count,
+        "token_configured": is_token_configured(),
         "devices_count": structure.get("devices_count"),
         "areas_count": structure.get("areas_count"),
         "automations_count": logic.get("automations_count"),
@@ -717,6 +813,7 @@ def get_ha_access_preview() -> dict:
         "api_based_analysis_possible": api_based_analysis_possible,
         "dashboard_analysis_possible": dashboard_analysis_possible,
         "export_prerequisites_summary": export_prerequisites_summary,
+        "token_configured": is_token_configured(),
     }
 
 
@@ -1047,9 +1144,14 @@ def _build_areas_devices_section(structure_preview: dict) -> dict:
     devices = structure_preview.get("devices_count")
     readable = isinstance(areas, int) and isinstance(devices, int)
     reachable = bool(structure_preview.get("areas_available") or structure_preview.get("devices_available"))
+    token_configured = bool(structure_preview.get("token_configured"))
+    areas_http_status = structure_preview.get("areas_http_status")
+    devices_http_status = structure_preview.get("devices_http_status")
 
     if readable:
         reason = "areas and devices readable from structure preview"
+    elif areas_http_status in (401, 403) or devices_http_status in (401, 403):
+        reason = "token configured but unauthorized" if token_configured else "no token configured"
     elif reachable:
         reason = "areas/devices endpoints reachable but not readable"
     else:
@@ -1185,10 +1287,15 @@ def build_system_preview(ai_context_preview: dict, structure_preview: dict) -> d
 
     readable = all(isinstance(value, int) for value in (entities_count, devices_count, areas_count))
     reachable = bool(structure_preview.get("entities_available"))
+    token_configured = bool(structure_preview.get("token_configured"))
+    entities_http_status = structure_preview.get("entities_http_status")
 
     if readable:
         status = "available"
         reason = "counts readable from structure preview"
+    elif entities_http_status in (401, 403):
+        status = "unavailable"
+        reason = "token configured but unauthorized" if token_configured else "no token configured"
     elif reachable:
         status = "unavailable"
         reason = "structure endpoint reachable but not readable"
@@ -1227,12 +1334,14 @@ def build_entities_preview(structure_preview: dict, domain_preview: dict) -> dic
     )
     readable = isinstance(entities_count, int)
 
+    token_configured = bool(domain_preview.get("token_configured"))
+
     if readable:
         status = "available"
         reason = "states data readable"
     elif states_http_status in (401, 403):
         status = "unavailable"
-        reason = "states endpoint not readable (authorization required)"
+        reason = "token configured but unauthorized" if token_configured else "no token configured"
     elif reachable:
         status = "unavailable"
         reason = "states endpoint reachable but returned no readable data"
@@ -1264,12 +1373,14 @@ def build_logic_preview(logic_preview: dict) -> dict:
     reachable = bool(logic_preview.get("states_endpoint_reachable"))
     readable = states_http_status == 200
 
+    token_configured = bool(logic_preview.get("token_configured"))
+
     if readable:
         status = "available"
         reason = "logic entities readable from states endpoint"
     elif states_http_status in (401, 403):
         status = "unavailable"
-        reason = "states endpoint not readable (authorization required)"
+        reason = "token configured but unauthorized" if token_configured else "no token configured"
     elif reachable:
         status = "unavailable"
         reason = "states endpoint reachable but not readable"
@@ -1304,10 +1415,16 @@ def build_dashboard_preview(dashboard_preview: dict) -> dict:
 
     reachable = bool(dashboard_preview.get("dashboards_available"))
     readable = any(isinstance(value, int) for value in (dashboards, views, cards))
+    token_configured = bool(dashboard_preview.get("token_configured"))
+    dashboards_http_status = dashboard_preview.get("dashboards_http_status")
+    lovelace_http_status = dashboard_preview.get("lovelace_config_http_status")
 
     if readable:
         status = "available"
         reason = "dashboard metadata readable"
+    elif dashboards_http_status in (401, 403) or lovelace_http_status in (401, 403):
+        status = "unavailable"
+        reason = "token configured but unauthorized" if token_configured else "no token configured"
     elif reachable:
         status = "unavailable"
         reason = "dashboard endpoint reachable but not readable"
@@ -1329,6 +1446,6 @@ def build_dashboard_preview(dashboard_preview: dict) -> dict:
 
 ## Annahmen / Einschränkungen
 
-- Es wurden keine neuen Datenquellen eingeführt; die Export-Statusfelder basieren ausschließlich auf den bereits vorhandenen Preview-/Discovery-Ergebnissen.
-- `readability` wird in diesem Schritt heuristisch aus bestehenden Feldern (z. B. HTTP-200-indizierte Lesbarkeit oder vorhandene Counts) abgeleitet.
-- Integrations-Discovery bleibt absichtlich Platzhalter-basiert (kein neues Integrations-Discovery-System in diesem Schritt).
+- Ohne gültigen Benutzer-Token bleiben API-Endpunkte ggf. nur erreichbar aber nicht lesbar; der Export bleibt dann bewusst ehrlich (`unavailable` + klarer `reason`).
+- In dieser Umgebung konnte kein echter gültiger Home-Assistant-Token verifiziert werden; getestet wurde die strukturelle Token-Verarbeitung und Header-Scope-Logik.
+- Es wurden keine neuen Datenquellen, keine Supervisor-Tokens und keine Schreiboperationen im Anwendungscode eingeführt.

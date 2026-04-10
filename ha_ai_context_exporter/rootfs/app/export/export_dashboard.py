@@ -11,10 +11,16 @@ def build_dashboard_preview(dashboard_preview: dict) -> dict:
 
     reachable = bool(dashboard_preview.get("dashboards_available"))
     readable = any(isinstance(value, int) for value in (dashboards, views, cards))
+    token_configured = bool(dashboard_preview.get("token_configured"))
+    dashboards_http_status = dashboard_preview.get("dashboards_http_status")
+    lovelace_http_status = dashboard_preview.get("lovelace_config_http_status")
 
     if readable:
         status = "available"
         reason = "dashboard metadata readable"
+    elif dashboards_http_status in (401, 403) or lovelace_http_status in (401, 403):
+        status = "unavailable"
+        reason = "token configured but unauthorized" if token_configured else "no token configured"
     elif reachable:
         status = "unavailable"
         reason = "dashboard endpoint reachable but not readable"

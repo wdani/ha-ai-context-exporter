@@ -125,9 +125,14 @@ def _build_areas_devices_section(structure_preview: dict) -> dict:
     devices = structure_preview.get("devices_count")
     readable = isinstance(areas, int) and isinstance(devices, int)
     reachable = bool(structure_preview.get("areas_available") or structure_preview.get("devices_available"))
+    token_configured = bool(structure_preview.get("token_configured"))
+    areas_http_status = structure_preview.get("areas_http_status")
+    devices_http_status = structure_preview.get("devices_http_status")
 
     if readable:
         reason = "areas and devices readable from structure preview"
+    elif areas_http_status in (401, 403) or devices_http_status in (401, 403):
+        reason = "token configured but unauthorized" if token_configured else "no token configured"
     elif reachable:
         reason = "areas/devices endpoints reachable but not readable"
     else:
