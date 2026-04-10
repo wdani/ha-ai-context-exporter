@@ -1,0 +1,490 @@
+# Review Bundle
+
+## Kurze Zusammenfassung
+
+- Neue UI-Sektion **Export Download** in `index.html` ergänzt (Mode/Variant/Format-Selects, Category-Checkboxen, Download-Button, Statusmeldung).
+- Frontend baut Ingress-kompatible Download-URL über bestehende `buildAddonUrl(...)`-Logik und löst den Datei-Download über den Browser aus.
+- Frontend sendet `categories` als kommaseparierte Liste und zeigt bei 0 ausgewählten Kategorien direkt eine UI-Fehlermeldung ohne Request.
+- Kleine Robustheitsverbesserung im Dateinamen-Renderer: `generated_at` wird typ-sicher als String geprüft.
+
+## Vollständige Inhalte aller geänderten Dateien
+
+### `ha_ai_context_exporter/rootfs/app/web/index.html`
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HA AI Context Exporter</title>
+    <link id="app-stylesheet" rel="stylesheet" href="" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>HA AI Context Exporter</h1>
+      <p>Initial scaffold for future Home Assistant AI export features.</p>
+      <p><strong>Live test mode</strong></p>
+      <button type="button" disabled>Start export (coming soon)</button>
+
+      <section aria-live="polite">
+        <h2>Export Download</h2>
+        <label for="export-mode">Mode</label>
+        <select id="export-mode">
+          <option value="quick">quick</option>
+          <option value="standard" selected>standard</option>
+          <option value="full">full</option>
+        </select>
+
+        <label for="export-variant">Variant</label>
+        <select id="export-variant">
+          <option value="A" selected>A</option>
+          <option value="B">B</option>
+        </select>
+
+        <label for="export-format">Format</label>
+        <select id="export-format">
+          <option value="json" selected>json</option>
+          <option value="markdown">markdown</option>
+        </select>
+
+        <fieldset>
+          <legend>Categories</legend>
+          <label><input type="checkbox" name="export-category" value="system" checked /> system</label>
+          <label><input type="checkbox" name="export-category" value="entities" checked /> entities</label>
+          <label><input type="checkbox" name="export-category" value="areas_devices" checked /> areas_devices</label>
+          <label><input type="checkbox" name="export-category" value="logic" checked /> logic</label>
+          <label><input type="checkbox" name="export-category" value="dashboard" checked /> dashboard</label>
+          <label><input type="checkbox" name="export-category" value="integrations" checked /> integrations</label>
+        </fieldset>
+
+        <button id="download-export-button" type="button">Download Export</button>
+        <p id="export-download-message" role="status" aria-live="polite"></p>
+      </section>
+
+      <section aria-live="polite">
+        <h2>AI Export Preview</h2>
+        <button id="generate-ai-export-preview" type="button">Generate AI export preview</button>
+        <pre id="ai-export-preview-output">No export generated yet.</pre>
+      </section>
+
+      <section aria-live="polite"><h2>App info</h2><p id="app-info">Loading app info...</p></section>
+      <section aria-live="polite"><h2>System info</h2><p id="system-info">Loading system info...</p></section>
+      <section aria-live="polite"><h2>Home Assistant base info</h2><p id="ha-base-info">Loading Home Assistant base info...</p></section>
+      <section aria-live="polite"><h2>Home Assistant detection</h2><p id="ha-detect-info">Loading Home Assistant detection...</p></section>
+      <section aria-live="polite"><h2>Home Assistant core check</h2><p id="ha-core-check-info">Loading Home Assistant core check...</p></section>
+      <section aria-live="polite"><h2>Home Assistant capabilities</h2><p id="ha-capabilities-info">Loading Home Assistant capabilities...</p></section>
+      <section aria-live="polite"><h2>Home Assistant metadata preview</h2><p id="ha-metadata-preview-info">Loading Home Assistant metadata preview...</p></section>
+      <section aria-live="polite"><h2>Home Assistant domain preview</h2><p id="ha-domain-preview-info">Loading Home Assistant domain preview...</p></section>
+      <section aria-live="polite"><h2>Home Assistant structure preview</h2><p id="ha-structure-preview-info">Loading Home Assistant structure preview...</p></section>
+      <section aria-live="polite"><h2>Home Assistant logic preview</h2><p id="ha-logic-preview-info">Loading Home Assistant logic preview...</p></section>
+      <section aria-live="polite"><h2>Home Assistant dashboard preview</h2><p id="ha-dashboard-preview-info">Loading Home Assistant dashboard preview...</p></section>
+      <section aria-live="polite"><h2>AI context preview</h2><p id="ha-ai-context-preview-info">Loading AI context preview...</p></section>
+
+      <section aria-live="polite"><h2>Home Assistant access preview</h2><p id="ha-access-preview-info">Loading Home Assistant access preview...</p></section>
+    </main>
+
+    <script>
+      function getAddonBaseUrl() {
+        const basePath = window.location.pathname.endsWith("/")
+          ? window.location.pathname
+          : `${window.location.pathname}/`;
+        return new URL(basePath, window.location.origin);
+      }
+
+      function buildAddonUrl(relativePath) {
+        return new URL(relativePath, getAddonBaseUrl());
+      }
+
+      async function fetchAddonJson(relativeApiPath) {
+        const response = await fetch(buildAddonUrl(relativeApiPath));
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        return response.json();
+      }
+
+      async function startExportDownload() {
+        const message = document.getElementById("export-download-message");
+        const mode = document.getElementById("export-mode").value;
+        const variant = document.getElementById("export-variant").value;
+        const format = document.getElementById("export-format").value;
+        const selectedCategories = Array.from(
+          document.querySelectorAll('input[name="export-category"]:checked'),
+          (input) => input.value,
+        );
+
+        if (selectedCategories.length === 0) {
+          message.textContent = "Please select at least one category.";
+          return;
+        }
+
+        message.textContent = "Starting download...";
+
+        const params = new URLSearchParams({
+          mode,
+          variant,
+          format,
+          categories: selectedCategories.join(","),
+        });
+
+        const downloadUrl = buildAddonUrl(`api/export/download?${params.toString()}`);
+
+        try {
+          const response = await fetch(downloadUrl);
+          if (!response.ok) {
+            let errorMessage = `Download failed with status ${response.status}.`;
+            try {
+              const errorPayload = await response.json();
+              if (errorPayload && typeof errorPayload.message === "string") {
+                errorMessage = errorPayload.message;
+              }
+            } catch {
+              // Keep generic fallback.
+            }
+            message.textContent = errorMessage;
+            return;
+          }
+
+          const blob = await response.blob();
+          const contentDisposition = response.headers.get("Content-Disposition") || "";
+          const match = contentDisposition.match(/filename="([^"]+)"/);
+          const filename = match ? match[1] : `ha-ai-context-export.${format === "markdown" ? "md" : "json"}`;
+
+          const objectUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = objectUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(objectUrl);
+
+          message.textContent = `Download started: ${filename}`;
+        } catch {
+          message.textContent = "Download failed due to a network or browser error.";
+        }
+      }
+
+      function applyStylesheet() {
+        document.getElementById("app-stylesheet").href = buildAddonUrl("styles.css").toString();
+      }
+
+      async function loadAppInfo() {
+        const target = document.getElementById("app-info");
+        try {
+          const data = await fetchAddonJson("api/info");
+          target.textContent = `Name: ${data.name} | Version: ${data.version} | Status: ${data.status}`;
+        } catch {
+          target.textContent = "Failed to load app info.";
+        }
+      }
+
+      async function loadSystemInfo() {
+        const target = document.getElementById("system-info");
+        try {
+          const data = await fetchAddonJson("api/system");
+          target.textContent = `Name: ${data.name} | Version: ${data.version} | Port: ${data.port} | In container: ${data.in_container} | Working directory: ${data.working_directory}`;
+        } catch {
+          target.textContent = "Failed to load system info.";
+        }
+      }
+
+      async function loadHaDetectInfo() {
+        const target = document.getElementById("ha-detect-info");
+        try {
+          const data = await fetchAddonJson("api/ha-detect");
+          target.textContent = `Name: ${data.name} | Version: ${data.version} | Slug: ${data.addon_slug} | /data: ${data.data_exists} | /config: ${data.config_exists} | /app: ${data.app_exists} | options file: ${data.options_file_exists} | Ready: ${data.looks_ready_for_next_ha_step}`;
+        } catch {
+          target.textContent = "Failed to load Home Assistant detection.";
+        }
+      }
+
+      async function loadHaCoreCheckInfo() {
+        const target = document.getElementById("ha-core-check-info");
+        try {
+          const data = await fetchAddonJson("api/ha-core-check");
+          target.textContent = `Name: ${data.name} | Version: ${data.version} | Slug: ${data.addon_slug} | Prerequisites: ${data.prerequisites_look_ok} | Candidate: ${data.local_core_url_candidate_checked} | Reachable: ${data.local_core_candidate_reachable} | HTTP status: ${data.local_core_candidate_http_status} | Next safe step possible: ${data.next_safe_core_step_possible}`;
+        } catch {
+          target.textContent = "Failed to load Home Assistant core check.";
+        }
+      }
+
+      async function loadHaCapabilitiesInfo() {
+        const target = document.getElementById("ha-capabilities-info");
+        try {
+          const data = await fetchAddonJson("api/ha-capabilities");
+          target.textContent = `Name: ${data.name} | Version: ${data.version} | Slug: ${data.addon_slug} | Core host candidate: ${data.core_host_candidate} | /api/: ${data.api_root_reachable} | /api/states: ${data.states_endpoint_reachable} | /api/services: ${data.services_endpoint_reachable} | Safe metadata step: ${data.safe_to_attempt_metadata_step}`;
+        } catch {
+          target.textContent = "Failed to load Home Assistant capabilities.";
+        }
+      }
+
+      async function loadHaMetadataPreviewInfo() {
+        const target = document.getElementById("ha-metadata-preview-info");
+        try {
+          const data = await fetchAddonJson("api/ha-metadata-preview");
+          target.textContent = `Config available: ${data.config_available} | States reachable: ${data.states_endpoint_reachable} | Services reachable: ${data.services_endpoint_reachable} | States count: ${data.states_count} | Service domains: ${data.services_domain_count} | Home Assistant version: ${data.home_assistant_version}`;
+        } catch {
+          target.textContent = "Failed to load Home Assistant metadata preview.";
+        }
+      }
+
+      async function loadHaDomainPreviewInfo() {
+        const target = document.getElementById("ha-domain-preview-info");
+        try {
+          const data = await fetchAddonJson("api/ha-domain-preview");
+          let top10 = [];
+          if (Array.isArray(data.top_domains) && data.top_domains.length > 0) {
+            top10 = data.top_domains.map((item) => [item.domain, item.count]);
+          } else {
+            const entries = Object.entries(data.domain_counts || {});
+            entries.sort((a, b) => b[1] - a[1]);
+            top10 = entries.slice(0, 10);
+          }
+          if (top10.length === 0) {
+            target.textContent = "Domain counts (top 10): none";
+            return;
+          }
+          target.textContent = `Domain counts (top 10): ${top10.map(([d, c]) => `${d}: ${c}`).join(" | ")}`;
+        } catch {
+          target.textContent = "Failed to load Home Assistant domain preview.";
+        }
+      }
+
+      async function loadHaStructurePreviewInfo() {
+        const target = document.getElementById("ha-structure-preview-info");
+        try {
+          const data = await fetchAddonJson("api/ha-structure-preview");
+          target.textContent = `Areas available: ${data.areas_available} | Devices available: ${data.devices_available} | Entities available: ${data.entities_available} | Areas count: ${data.areas_count} | Devices count: ${data.devices_count} | Entities count: ${data.entities_count}`;
+        } catch {
+          target.textContent = "Failed to load Home Assistant structure preview.";
+        }
+      }
+
+      async function loadHaLogicPreviewInfo() {
+        const target = document.getElementById("ha-logic-preview-info");
+        try {
+          const data = await fetchAddonJson("api/ha-logic-preview");
+          target.textContent = `Automations: ${data.automations_count} | Scripts: ${data.scripts_count} | Scenes: ${data.scenes_count}`;
+        } catch {
+          target.textContent = "Failed to load Home Assistant logic preview.";
+        }
+      }
+
+      async function loadHaDashboardPreviewInfo() {
+        const target = document.getElementById("ha-dashboard-preview-info");
+        try {
+          const data = await fetchAddonJson("api/ha-dashboard-preview");
+          const viewTypes = Array.isArray(data.detected_view_types) && data.detected_view_types.length > 0
+            ? data.detected_view_types.join(", ")
+            : "none";
+          target.textContent = `Dashboards available: ${data.dashboards_available} | Dashboards count: ${data.dashboards_count} | Total views: ${data.total_views_count} | Total cards: ${data.total_cards_count} | Detected view types: ${viewTypes}`;
+        } catch {
+          target.textContent = "Failed to load Home Assistant dashboard preview.";
+        }
+      }
+
+      async function loadHaAiContextPreviewInfo() {
+        const target = document.getElementById("ha-ai-context-preview-info");
+        try {
+          const data = await fetchAddonJson("api/ha-ai-context-preview");
+          const topDomains = Array.isArray(data.top_domains) && data.top_domains.length > 0
+            ? data.top_domains.map((item) => `${item.domain}:${item.count}`).join(", ")
+            : "none";
+          target.textContent = `System size: ${data.system_size} | Entities: ${data.entities_count} | Devices: ${data.devices_count} | Areas: ${data.areas_count} | Automations: ${data.automations_count} | Scripts: ${data.scripts_count} | Scenes: ${data.scenes_count} | Dashboards: ${data.dashboards_count} | Views: ${data.views_count} | Cards: ${data.cards_count} | Top domains: ${topDomains}`;
+        } catch {
+          target.textContent = "Failed to load AI context preview.";
+        }
+      }
+
+
+      async function loadHaAccessPreviewInfo() {
+        const target = document.getElementById("ha-access-preview-info");
+        try {
+          const data = await fetchAddonJson("api/ha-access-preview");
+          target.textContent = `container: ${data.container_running} | data path: ${data.has_data_path} | app path: ${data.has_app_path} | config path: ${data.has_config_path} | core candidate: ${data.core_host_candidate} | core reachable: ${data.core_root_reachable} | states reachable: ${data.states_endpoint_reachable} | services reachable: ${data.services_endpoint_reachable} | dashboards reachable: ${data.dashboards_endpoint_reachable} | lovelace config reachable: ${data.lovelace_config_endpoint_reachable} | file_config_access_possible: ${data.file_config_access_possible} | api_based_analysis_possible: ${data.api_based_analysis_possible} | dashboard_analysis_possible: ${data.dashboard_analysis_possible} | export_prerequisites_summary: ${data.export_prerequisites_summary}`;
+        } catch {
+          target.textContent = "Failed to load Home Assistant access preview.";
+        }
+      }
+
+      async function generateAiExportPreview() {
+        const output = document.getElementById("ai-export-preview-output");
+        output.textContent = "Generating...";
+        try {
+          const data = await fetchAddonJson("api/ai-export-preview");
+          output.textContent = JSON.stringify(data, null, 2);
+        } catch {
+          output.textContent = "Failed to generate AI export preview.";
+        }
+      }
+
+      async function loadHaBaseInfo() {
+        const target = document.getElementById("ha-base-info");
+        try {
+          const data = await fetchAddonJson("api/ha-base");
+          const pathSummary = data.paths.map((item) => `${item.path}:${item.exists}`).join(", ");
+          target.textContent = `Slug: ${data.addon_slug} | Version: ${data.version} | Looks like HA add-on env: ${data.looks_like_ha_addon_environment} | Paths: ${pathSummary}`;
+        } catch {
+          target.textContent = "Failed to load Home Assistant base info.";
+        }
+      }
+
+      function runPreviewLoad(loader) {
+        try {
+          loader();
+        } catch {
+          // Keep other preview sections running even if one loader fails unexpectedly.
+        }
+      }
+
+      document
+        .getElementById("generate-ai-export-preview")
+        .addEventListener("click", generateAiExportPreview);
+      document
+        .getElementById("download-export-button")
+        .addEventListener("click", startExportDownload);
+
+      applyStylesheet();
+      runPreviewLoad(loadAppInfo);
+      runPreviewLoad(loadSystemInfo);
+      runPreviewLoad(loadHaBaseInfo);
+      runPreviewLoad(loadHaDetectInfo);
+      runPreviewLoad(loadHaCoreCheckInfo);
+      runPreviewLoad(loadHaCapabilitiesInfo);
+      runPreviewLoad(loadHaMetadataPreviewInfo);
+      runPreviewLoad(loadHaDomainPreviewInfo);
+      runPreviewLoad(loadHaStructurePreviewInfo);
+      runPreviewLoad(loadHaLogicPreviewInfo);
+      runPreviewLoad(loadHaDashboardPreviewInfo);
+      runPreviewLoad(loadHaAiContextPreviewInfo);
+      runPreviewLoad(loadHaAccessPreviewInfo);
+    </script>
+  </body>
+</html>
+
+```
+
+### `ha_ai_context_exporter/rootfs/app/export/export_renderers.py`
+```python
+"""Render export payloads to downloadable formats."""
+
+from __future__ import annotations
+
+import json
+from typing import Any
+
+from .export_controller import ExportValidationError
+
+ALLOWED_DOWNLOAD_FORMATS = ("json", "markdown")
+
+
+
+def validate_download_format(fmt: str) -> str:
+    """Validate requested download format."""
+    if fmt not in ALLOWED_DOWNLOAD_FORMATS:
+        allowed = ", ".join(ALLOWED_DOWNLOAD_FORMATS)
+        raise ExportValidationError(
+            f"Invalid format '{fmt}'. Allowed values: {allowed}."
+        )
+    return fmt
+
+
+
+def _safe_timestamp(generated_at: str) -> str:
+    ts = generated_at.replace(":", "-")
+    ts = ts.replace("+00:00", "Z")
+    return ts
+
+
+
+def build_download_filename(payload: dict, mode: str, variant: str, fmt: str) -> str:
+    """Build a stable download filename from payload metadata and query context."""
+    generated_at = payload.get("generated_at")
+    if not isinstance(generated_at, str):
+        generated_at = "unknown-time"
+    timestamp = _safe_timestamp(generated_at)
+    extension = "json" if fmt == "json" else "md"
+    return f"ha-ai-context-export_{mode}_{variant}_{timestamp}.{extension}"
+
+
+
+def render_export_json_bytes(payload: dict) -> bytes:
+    """Render payload as pretty UTF-8 JSON bytes."""
+    return json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
+
+
+
+def _append_markdown_lines(lines: list[str], value: Any, level: int = 0) -> None:
+    indent = "  " * level
+
+    if isinstance(value, dict):
+        if not value:
+            lines.append(f"{indent}- (empty)")
+            return
+        for key, nested in value.items():
+            if isinstance(nested, (dict, list)):
+                lines.append(f"{indent}- **{key}**:")
+                _append_markdown_lines(lines, nested, level + 1)
+            else:
+                lines.append(f"{indent}- **{key}**: {nested}")
+        return
+
+    if isinstance(value, list):
+        if not value:
+            lines.append(f"{indent}- (empty list)")
+            return
+        for item in value:
+            if isinstance(item, (dict, list)):
+                lines.append(f"{indent}-")
+                _append_markdown_lines(lines, item, level + 1)
+            else:
+                lines.append(f"{indent}- {item}")
+        return
+
+    lines.append(f"{indent}- {value}")
+
+
+
+def render_export_markdown_bytes(payload: dict) -> bytes:
+    """Render payload as a readable Markdown document."""
+    lines: list[str] = []
+    lines.append("# HA AI Context Export")
+    lines.append("")
+    lines.append(f"- Export format: {payload.get('export_format')}")
+    lines.append(f"- Export version: {payload.get('export_version')}")
+    lines.append(f"- Generated at: {payload.get('generated_at')}")
+
+    meta = payload.get("meta", {})
+    lines.append(f"- Mode: {meta.get('mode')}")
+    lines.append(f"- Variant: {meta.get('variant')}")
+    lines.append("")
+
+    section_order = [
+        ("tool", "Tool"),
+        ("environment", "Environment"),
+        ("system", "System"),
+        ("entities", "Entities"),
+        ("areas_devices", "Areas & Devices"),
+        ("logic", "Logic"),
+        ("dashboard", "Dashboard"),
+        ("integrations", "Integrations"),
+        ("meta", "Meta"),
+    ]
+
+    for key, title in section_order:
+        if key not in payload:
+            continue
+        lines.append(f"## {title}")
+        _append_markdown_lines(lines, payload[key], level=0)
+        lines.append("")
+
+    return "\n".join(lines).encode("utf-8")
+
+```
+
+## Annahmen / Einschränkungen
+
+- Die UI enthält bewusst keine eigene Validierungs-Engine; sie baut nur Parameter zusammen und nutzt das Backend als Source of Truth.
+- Bei Downloadfehlern versucht die UI die Backend-Fehlermeldung (`message`) zu zeigen, fällt sonst auf eine generische Meldung zurück.
+- Styling wurde bewusst minimal gehalten, um keinen größeren Frontend-Umbau einzuführen.
