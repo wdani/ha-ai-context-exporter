@@ -44,6 +44,7 @@ def get_app_info() -> dict:
     return dict(APP_INFO)
 
 
+<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
 
 
 def load_addon_options() -> dict:
@@ -93,6 +94,8 @@ def build_local_get_headers(url: str) -> dict[str, str]:
         return {"Authorization": f"Bearer {token}"}
     return {}
 
+=======
+>>>>>>> main
 def is_running_in_container() -> bool:
     """Best-effort container detection without external dependencies."""
     if Path("/.dockerenv").exists():

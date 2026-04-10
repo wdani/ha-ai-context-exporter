@@ -2,11 +2,19 @@
 
 ## Zusammenfassung
 
+<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
 - Version auf **0.0.2** erhöht und zentral über `rootfs/app/version.py` als Single Source of Truth geführt.
 - `config.yaml` um optionale `ha_token`-Konfiguration (sensibles Passwortfeld) erweitert.
 - Zentrale Auth-GET-Helper in `main.py` ergänzt: Token wird aus `/data/options.json` gelesen, Bearer-Header nur für erlaubte lokale HA-Core-Ziele gesetzt (nicht für Supervisor/externe Hosts).
 - Bestehende Discovery-/Preview-Funktionen weiterverwendet und um tokenbezogene Diagnosefelder erweitert (`token_configured`, zusätzliche HTTP-Status-Felder), ohne neue Endpunkte oder Schreiboperationen.
 - Exportausgabe weiterhin read-only und nun klarer bei Token-Status-Diagnose (`no token configured` vs `token configured but unauthorized`) sowie weiterhin mit konsistenten `status/reason/reachability/readability`, `data_completeness`, `discovery_status`, `warnings`.
+=======
+- Version zentralisiert in `rootfs/app/version.py` und auf `0.0.1` gesetzt (inkl. Nutzung in Backend/API und Export-Payload).
+- Add-on `config.yaml` auf Entwicklungsversionslinie `0.0.1` umgestellt.
+- Export-Ausgabe ehrlicher gemacht: konsistente `status`/`reason`/`reachability`/`readability` Felder in den Export-Kategorien.
+- Export um `data_completeness`, `discovery_status` und stets vorhandene `warnings`-Liste erweitert.
+- Unknown-/Null-Zustände werden jetzt mit erklärendem `reason` ausgewiesen statt nur implizit über `null`.
+>>>>>>> main
 
 ## Vollständige Inhalte aller geänderten Dateien
 
@@ -14,14 +22,22 @@
 ```python
 """Single source of truth for application version."""
 
+<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
 VERSION = "0.0.2"
+=======
+VERSION = "0.0.1"
+>>>>>>> main
 
 ```
 
 ### `ha_ai_context_exporter/config.yaml`
 ```yaml
 name: "HA AI Context Exporter"
+<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
 version: "0.0.2"
+=======
+version: "0.0.1"
+>>>>>>> main
 slug: "ha_ai_context_exporter"
 description: "Minimal scaffold for future Home Assistant AI context export features"
 arch:
@@ -34,10 +50,15 @@ ingress: true
 ingress_port: 8099
 panel_icon: mdi:robot-outline
 init: false
+<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
 options:
   ha_token: ""
 schema:
   ha_token: "password?"
+=======
+options: {}
+schema: {}
+>>>>>>> main
 
 ```
 
@@ -89,6 +110,7 @@ def get_app_info() -> dict:
     return dict(APP_INFO)
 
 
+<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
 
 
 def load_addon_options() -> dict:
@@ -138,6 +160,8 @@ def build_local_get_headers(url: str) -> dict[str, str]:
         return {"Authorization": f"Bearer {token}"}
     return {}
 
+=======
+>>>>>>> main
 def is_running_in_container() -> bool:
     """Best-effort container detection without external dependencies."""
     if Path("/.dockerenv").exists():
@@ -205,7 +229,11 @@ def get_ha_detect_info() -> dict:
 def probe_local_url(url: str, path: str) -> dict:
     """Short unauthenticated local probe request (GET only)."""
     request_url = f"{url.rstrip('/')}{path}"
+<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
     request = urllib.request.Request(request_url, method="GET", headers=build_local_get_headers(request_url))
+=======
+    request = urllib.request.Request(request_url, method="GET")
+>>>>>>> main
 
     try:
         with urllib.request.urlopen(request, timeout=1.5) as response:
@@ -223,7 +251,11 @@ def probe_local_url(url: str, path: str) -> dict:
 def fetch_json_on_200(url: str, path: str) -> object | None:
     """Fetch JSON payload only when endpoint returns HTTP 200."""
     request_url = f"{url.rstrip('/')}{path}"
+<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
     request = urllib.request.Request(request_url, method="GET", headers=build_local_get_headers(request_url))
+=======
+    request = urllib.request.Request(request_url, method="GET")
+>>>>>>> main
 
     try:
         with urllib.request.urlopen(request, timeout=1.5) as response:
