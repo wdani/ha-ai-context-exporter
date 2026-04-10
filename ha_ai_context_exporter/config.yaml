@@ -1,9 +1,5 @@
 name: "HA AI Context Exporter"
-<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
-version: "0.0.2"
-=======
-version: "0.0.1"
->>>>>>> main
+version: "0.0.3"
 slug: "ha_ai_context_exporter"
 description: "Minimal scaffold for future Home Assistant AI context export features"
 arch:
@@ -16,12 +12,6 @@ ingress: true
 ingress_port: 8099
 panel_icon: mdi:robot-outline
 init: false
-<<<<<<< codex/create-minimal-home-assistant-scaffold-2vcvks
-options:
-  ha_token: ""
+options: {}
 schema:
   ha_token: "password?"
-=======
-options: {}
-schema: {}
->>>>>>> main
