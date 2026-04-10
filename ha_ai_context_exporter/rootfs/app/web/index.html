@@ -14,6 +14,41 @@
       <button type="button" disabled>Start export (coming soon)</button>
 
       <section aria-live="polite">
+        <h2>Export Download</h2>
+        <label for="export-mode">Mode</label>
+        <select id="export-mode">
+          <option value="quick">quick</option>
+          <option value="standard" selected>standard</option>
+          <option value="full">full</option>
+        </select>
+
+        <label for="export-variant">Variant</label>
+        <select id="export-variant">
+          <option value="A" selected>A</option>
+          <option value="B">B</option>
+        </select>
+
+        <label for="export-format">Format</label>
+        <select id="export-format">
+          <option value="json" selected>json</option>
+          <option value="markdown">markdown</option>
+        </select>
+
+        <fieldset>
+          <legend>Categories</legend>
+          <label><input type="checkbox" name="export-category" value="system" checked /> system</label>
+          <label><input type="checkbox" name="export-category" value="entities" checked /> entities</label>
+          <label><input type="checkbox" name="export-category" value="areas_devices" checked /> areas_devices</label>
+          <label><input type="checkbox" name="export-category" value="logic" checked /> logic</label>
+          <label><input type="checkbox" name="export-category" value="dashboard" checked /> dashboard</label>
+          <label><input type="checkbox" name="export-category" value="integrations" checked /> integrations</label>
+        </fieldset>
+
+        <button id="download-export-button" type="button">Download Export</button>
+        <p id="export-download-message" role="status" aria-live="polite"></p>
+      </section>
+
+      <section aria-live="polite">
         <h2>AI Export Preview</h2>
         <button id="generate-ai-export-preview" type="button">Generate AI export preview</button>
         <pre id="ai-export-preview-output">No export generated yet.</pre>
@@ -53,6 +88,68 @@
           throw new Error(`Request failed with status ${response.status}`);
         }
         return response.json();
+      }
+
+      async function startExportDownload() {
+        const message = document.getElementById("export-download-message");
+        const mode = document.getElementById("export-mode").value;
+        const variant = document.getElementById("export-variant").value;
+        const format = document.getElementById("export-format").value;
+        const selectedCategories = Array.from(
+          document.querySelectorAll('input[name="export-category"]:checked'),
+          (input) => input.value,
+        );
+
+        if (selectedCategories.length === 0) {
+          message.textContent = "Please select at least one category.";
+          return;
+        }
+
+        message.textContent = "Starting download...";
+
+        const params = new URLSearchParams({
+          mode,
+          variant,
+          format,
+          categories: selectedCategories.join(","),
+        });
+
+        const downloadUrl = buildAddonUrl(`api/export/download?${params.toString()}`);
+
+        try {
+          const response = await fetch(downloadUrl);
+          if (!response.ok) {
+            let errorMessage = `Download failed with status ${response.status}.`;
+            try {
+              const errorPayload = await response.json();
+              if (errorPayload && typeof errorPayload.message === "string") {
+                errorMessage = errorPayload.message;
+              }
+            } catch {
+              // Keep generic fallback.
+            }
+            message.textContent = errorMessage;
+            return;
+          }
+
+          const blob = await response.blob();
+          const contentDisposition = response.headers.get("Content-Disposition") || "";
+          const match = contentDisposition.match(/filename="([^"]+)"/);
+          const filename = match ? match[1] : `ha-ai-context-export.${format === "markdown" ? "md" : "json"}`;
+
+          const objectUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = objectUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(objectUrl);
+
+          message.textContent = `Download started: ${filename}`;
+        } catch {
+          message.textContent = "Download failed due to a network or browser error.";
+        }
       }
 
       function applyStylesheet() {
@@ -231,6 +328,9 @@
       document
         .getElementById("generate-ai-export-preview")
         .addEventListener("click", generateAiExportPreview);
+      document
+        .getElementById("download-export-button")
+        .addEventListener("click", startExportDownload);
 
       applyStylesheet();
       runPreviewLoad(loadAppInfo);

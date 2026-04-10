@@ -31,7 +31,9 @@ def _safe_timestamp(generated_at: str) -> str:
 
 def build_download_filename(payload: dict, mode: str, variant: str, fmt: str) -> str:
     """Build a stable download filename from payload metadata and query context."""
-    generated_at = str(payload.get("generated_at", "unknown-time"))
+    generated_at = payload.get("generated_at")
+    if not isinstance(generated_at, str):
+        generated_at = "unknown-time"
     timestamp = _safe_timestamp(generated_at)
     extension = "json" if fmt == "json" else "md"
     return f"ha-ai-context-export_{mode}_{variant}_{timestamp}.{extension}"
