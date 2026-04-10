@@ -2,10 +2,10 @@
 
 ## Kurze Zusammenfassung
 
-- Neue UI-Sektion **Export Download** in `index.html` ergänzt (Mode/Variant/Format-Selects, Category-Checkboxen, Download-Button, Statusmeldung).
-- Frontend baut Ingress-kompatible Download-URL über bestehende `buildAddonUrl(...)`-Logik und löst den Datei-Download über den Browser aus.
-- Frontend sendet `categories` als kommaseparierte Liste und zeigt bei 0 ausgewählten Kategorien direkt eine UI-Fehlermeldung ohne Request.
-- Kleine Robustheitsverbesserung im Dateinamen-Renderer: `generated_at` wird typ-sicher als String geprüft.
+- Export-Panel im Frontend um **Preview Export** erweitert.
+- Gemeinsame kleine Helper-Logik eingeführt, damit Preview (`/api/export`) und Download (`/api/export/download`) dieselben UI-Parameter nutzen (keine Logikduplikation).
+- Preview-Ausgabe erfolgt als formatiertes JSON im `<pre>` mit stabilem Initialtext und klarem Fehlerzustand.
+- Bei 0 gewählten Kategorien wird für Preview und Download konsistent kein Request gesendet und eine kurze Panel-Fehlermeldung angezeigt.
 
 ## Vollständige Inhalte aller geänderten Dateien
 
@@ -57,8 +57,11 @@
           <label><input type="checkbox" name="export-category" value="integrations" checked /> integrations</label>
         </fieldset>
 
+        <button id="preview-export-button" type="button">Preview Export</button>
         <button id="download-export-button" type="button">Download Export</button>
+        <p id="export-preview-message" role="status" aria-live="polite"></p>
         <p id="export-download-message" role="status" aria-live="polite"></p>
+        <pre id="export-preview-output">No export preview generated yet.</pre>
       </section>
 
       <section aria-live="polite">
@@ -103,30 +106,93 @@
         return response.json();
       }
 
+      function readExportPanelSelection() {
+        return {
+          mode: document.getElementById("export-mode").value,
+          variant: document.getElementById("export-variant").value,
+          format: document.getElementById("export-format").value,
+          categories: Array.from(
+            document.querySelectorAll('input[name="export-category"]:checked'),
+            (input) => input.value,
+          ),
+        };
+      }
+
+      function buildExportQueryParams(selection, includeFormat) {
+        const params = new URLSearchParams({
+          mode: selection.mode,
+          variant: selection.variant,
+          categories: selection.categories.join(","),
+        });
+
+        if (includeFormat) {
+          params.set("format", selection.format);
+        }
+
+        return params;
+      }
+
+      function validateCategorySelection(selection, messageTarget) {
+        if (selection.categories.length > 0) {
+          return true;
+        }
+        messageTarget.textContent = "Please select at least one category.";
+        return false;
+      }
+
+      async function startExportPreview() {
+        const previewMessage = document.getElementById("export-preview-message");
+        const previewOutput = document.getElementById("export-preview-output");
+        const selection = readExportPanelSelection();
+
+        previewMessage.textContent = "";
+        if (!validateCategorySelection(selection, previewMessage)) {
+          previewOutput.textContent = "Preview not generated: no category selected.";
+          return;
+        }
+
+        previewMessage.textContent = "Loading preview...";
+        const params = buildExportQueryParams(selection, false);
+        const previewUrl = buildAddonUrl(`api/export?${params.toString()}`);
+
+        try {
+          const response = await fetch(previewUrl);
+          if (!response.ok) {
+            let errorMessage = `Preview failed with status ${response.status}.`;
+            try {
+              const errorPayload = await response.json();
+              if (errorPayload && typeof errorPayload.message === "string") {
+                errorMessage = errorPayload.message;
+              }
+            } catch {
+              // Keep generic fallback.
+            }
+            previewMessage.textContent = errorMessage;
+            previewOutput.textContent = `Preview error: ${errorMessage}`;
+            return;
+          }
+
+          const data = await response.json();
+          previewOutput.textContent = JSON.stringify(data, null, 2);
+          previewMessage.textContent = "Preview updated.";
+        } catch {
+          previewMessage.textContent = "Preview failed due to a network or browser error.";
+          previewOutput.textContent = "Preview error: network or browser error.";
+        }
+      }
+
       async function startExportDownload() {
         const message = document.getElementById("export-download-message");
-        const mode = document.getElementById("export-mode").value;
-        const variant = document.getElementById("export-variant").value;
-        const format = document.getElementById("export-format").value;
-        const selectedCategories = Array.from(
-          document.querySelectorAll('input[name="export-category"]:checked'),
-          (input) => input.value,
-        );
+        const selection = readExportPanelSelection();
 
-        if (selectedCategories.length === 0) {
-          message.textContent = "Please select at least one category.";
+        message.textContent = "";
+        if (!validateCategorySelection(selection, message)) {
           return;
         }
 
         message.textContent = "Starting download...";
 
-        const params = new URLSearchParams({
-          mode,
-          variant,
-          format,
-          categories: selectedCategories.join(","),
-        });
-
+        const params = buildExportQueryParams(selection, true);
         const downloadUrl = buildAddonUrl(`api/export/download?${params.toString()}`);
 
         try {
@@ -148,7 +214,7 @@
           const blob = await response.blob();
           const contentDisposition = response.headers.get("Content-Disposition") || "";
           const match = contentDisposition.match(/filename="([^"]+)"/);
-          const filename = match ? match[1] : `ha-ai-context-export.${format === "markdown" ? "md" : "json"}`;
+          const filename = match ? match[1] : `ha-ai-context-export.${selection.format === "markdown" ? "md" : "json"}`;
 
           const objectUrl = URL.createObjectURL(blob);
           const link = document.createElement("a");
@@ -342,6 +408,9 @@
         .getElementById("generate-ai-export-preview")
         .addEventListener("click", generateAiExportPreview);
       document
+        .getElementById("preview-export-button")
+        .addEventListener("click", startExportPreview);
+      document
         .getElementById("download-export-button")
         .addEventListener("click", startExportDownload);
 
@@ -365,126 +434,7 @@
 
 ```
 
-### `ha_ai_context_exporter/rootfs/app/export/export_renderers.py`
-```python
-"""Render export payloads to downloadable formats."""
-
-from __future__ import annotations
-
-import json
-from typing import Any
-
-from .export_controller import ExportValidationError
-
-ALLOWED_DOWNLOAD_FORMATS = ("json", "markdown")
-
-
-
-def validate_download_format(fmt: str) -> str:
-    """Validate requested download format."""
-    if fmt not in ALLOWED_DOWNLOAD_FORMATS:
-        allowed = ", ".join(ALLOWED_DOWNLOAD_FORMATS)
-        raise ExportValidationError(
-            f"Invalid format '{fmt}'. Allowed values: {allowed}."
-        )
-    return fmt
-
-
-
-def _safe_timestamp(generated_at: str) -> str:
-    ts = generated_at.replace(":", "-")
-    ts = ts.replace("+00:00", "Z")
-    return ts
-
-
-
-def build_download_filename(payload: dict, mode: str, variant: str, fmt: str) -> str:
-    """Build a stable download filename from payload metadata and query context."""
-    generated_at = payload.get("generated_at")
-    if not isinstance(generated_at, str):
-        generated_at = "unknown-time"
-    timestamp = _safe_timestamp(generated_at)
-    extension = "json" if fmt == "json" else "md"
-    return f"ha-ai-context-export_{mode}_{variant}_{timestamp}.{extension}"
-
-
-
-def render_export_json_bytes(payload: dict) -> bytes:
-    """Render payload as pretty UTF-8 JSON bytes."""
-    return json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
-
-
-
-def _append_markdown_lines(lines: list[str], value: Any, level: int = 0) -> None:
-    indent = "  " * level
-
-    if isinstance(value, dict):
-        if not value:
-            lines.append(f"{indent}- (empty)")
-            return
-        for key, nested in value.items():
-            if isinstance(nested, (dict, list)):
-                lines.append(f"{indent}- **{key}**:")
-                _append_markdown_lines(lines, nested, level + 1)
-            else:
-                lines.append(f"{indent}- **{key}**: {nested}")
-        return
-
-    if isinstance(value, list):
-        if not value:
-            lines.append(f"{indent}- (empty list)")
-            return
-        for item in value:
-            if isinstance(item, (dict, list)):
-                lines.append(f"{indent}-")
-                _append_markdown_lines(lines, item, level + 1)
-            else:
-                lines.append(f"{indent}- {item}")
-        return
-
-    lines.append(f"{indent}- {value}")
-
-
-
-def render_export_markdown_bytes(payload: dict) -> bytes:
-    """Render payload as a readable Markdown document."""
-    lines: list[str] = []
-    lines.append("# HA AI Context Export")
-    lines.append("")
-    lines.append(f"- Export format: {payload.get('export_format')}")
-    lines.append(f"- Export version: {payload.get('export_version')}")
-    lines.append(f"- Generated at: {payload.get('generated_at')}")
-
-    meta = payload.get("meta", {})
-    lines.append(f"- Mode: {meta.get('mode')}")
-    lines.append(f"- Variant: {meta.get('variant')}")
-    lines.append("")
-
-    section_order = [
-        ("tool", "Tool"),
-        ("environment", "Environment"),
-        ("system", "System"),
-        ("entities", "Entities"),
-        ("areas_devices", "Areas & Devices"),
-        ("logic", "Logic"),
-        ("dashboard", "Dashboard"),
-        ("integrations", "Integrations"),
-        ("meta", "Meta"),
-    ]
-
-    for key, title in section_order:
-        if key not in payload:
-            continue
-        lines.append(f"## {title}")
-        _append_markdown_lines(lines, payload[key], level=0)
-        lines.append("")
-
-    return "\n".join(lines).encode("utf-8")
-
-```
-
 ## Annahmen / Einschränkungen
 
-- Die UI enthält bewusst keine eigene Validierungs-Engine; sie baut nur Parameter zusammen und nutzt das Backend als Source of Truth.
-- Bei Downloadfehlern versucht die UI die Backend-Fehlermeldung (`message`) zu zeigen, fällt sonst auf eine generische Meldung zurück.
-- Styling wurde bewusst minimal gehalten, um keinen größeren Frontend-Umbau einzuführen.
+- In diesem Schritt wurde bewusst kein komplexer JSON-Viewer eingeführt; die Preview bleibt absichtlich roh und lesbar in `<pre>`.
+- Frontend-Prüfung erfolgte in dieser Umgebung primär über statische Code-Checks; ein echter Browser-UI-Durchlauf war hier nicht verfügbar.

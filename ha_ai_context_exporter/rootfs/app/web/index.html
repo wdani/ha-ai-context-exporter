@@ -44,8 +44,11 @@
           <label><input type="checkbox" name="export-category" value="integrations" checked /> integrations</label>
         </fieldset>
 
+        <button id="preview-export-button" type="button">Preview Export</button>
         <button id="download-export-button" type="button">Download Export</button>
+        <p id="export-preview-message" role="status" aria-live="polite"></p>
         <p id="export-download-message" role="status" aria-live="polite"></p>
+        <pre id="export-preview-output">No export preview generated yet.</pre>
       </section>
 
       <section aria-live="polite">
@@ -90,30 +93,93 @@
         return response.json();
       }
 
+      function readExportPanelSelection() {
+        return {
+          mode: document.getElementById("export-mode").value,
+          variant: document.getElementById("export-variant").value,
+          format: document.getElementById("export-format").value,
+          categories: Array.from(
+            document.querySelectorAll('input[name="export-category"]:checked'),
+            (input) => input.value,
+          ),
+        };
+      }
+
+      function buildExportQueryParams(selection, includeFormat) {
+        const params = new URLSearchParams({
+          mode: selection.mode,
+          variant: selection.variant,
+          categories: selection.categories.join(","),
+        });
+
+        if (includeFormat) {
+          params.set("format", selection.format);
+        }
+
+        return params;
+      }
+
+      function validateCategorySelection(selection, messageTarget) {
+        if (selection.categories.length > 0) {
+          return true;
+        }
+        messageTarget.textContent = "Please select at least one category.";
+        return false;
+      }
+
+      async function startExportPreview() {
+        const previewMessage = document.getElementById("export-preview-message");
+        const previewOutput = document.getElementById("export-preview-output");
+        const selection = readExportPanelSelection();
+
+        previewMessage.textContent = "";
+        if (!validateCategorySelection(selection, previewMessage)) {
+          previewOutput.textContent = "Preview not generated: no category selected.";
+          return;
+        }
+
+        previewMessage.textContent = "Loading preview...";
+        const params = buildExportQueryParams(selection, false);
+        const previewUrl = buildAddonUrl(`api/export?${params.toString()}`);
+
+        try {
+          const response = await fetch(previewUrl);
+          if (!response.ok) {
+            let errorMessage = `Preview failed with status ${response.status}.`;
+            try {
+              const errorPayload = await response.json();
+              if (errorPayload && typeof errorPayload.message === "string") {
+                errorMessage = errorPayload.message;
+              }
+            } catch {
+              // Keep generic fallback.
+            }
+            previewMessage.textContent = errorMessage;
+            previewOutput.textContent = `Preview error: ${errorMessage}`;
+            return;
+          }
+
+          const data = await response.json();
+          previewOutput.textContent = JSON.stringify(data, null, 2);
+          previewMessage.textContent = "Preview updated.";
+        } catch {
+          previewMessage.textContent = "Preview failed due to a network or browser error.";
+          previewOutput.textContent = "Preview error: network or browser error.";
+        }
+      }
+
       async function startExportDownload() {
         const message = document.getElementById("export-download-message");
-        const mode = document.getElementById("export-mode").value;
-        const variant = document.getElementById("export-variant").value;
-        const format = document.getElementById("export-format").value;
-        const selectedCategories = Array.from(
-          document.querySelectorAll('input[name="export-category"]:checked'),
-          (input) => input.value,
-        );
+        const selection = readExportPanelSelection();
 
-        if (selectedCategories.length === 0) {
-          message.textContent = "Please select at least one category.";
+        message.textContent = "";
+        if (!validateCategorySelection(selection, message)) {
           return;
         }
 
         message.textContent = "Starting download...";
 
-        const params = new URLSearchParams({
-          mode,
-          variant,
-          format,
-          categories: selectedCategories.join(","),
-        });
-
+        const params = buildExportQueryParams(selection, true);
         const downloadUrl = buildAddonUrl(`api/export/download?${params.toString()}`);
 
         try {
@@ -135,7 +201,7 @@
           const blob = await response.blob();
           const contentDisposition = response.headers.get("Content-Disposition") || "";
           const match = contentDisposition.match(/filename="([^"]+)"/);
-          const filename = match ? match[1] : `ha-ai-context-export.${format === "markdown" ? "md" : "json"}`;
+          const filename = match ? match[1] : `ha-ai-context-export.${selection.format === "markdown" ? "md" : "json"}`;
 
           const objectUrl = URL.createObjectURL(blob);
           const link = document.createElement("a");
@@ -328,6 +394,9 @@
       document
         .getElementById("generate-ai-export-preview")
         .addEventListener("click", generateAiExportPreview);
+      document
+        .getElementById("preview-export-button")
+        .addEventListener("click", startExportPreview);
       document
         .getElementById("download-export-button")
         .addEventListener("click", startExportDownload);
