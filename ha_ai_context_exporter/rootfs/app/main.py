@@ -13,6 +13,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 from export.export_controller import ExportValidationError, build_export_payload
+from version import VERSION
 from export.export_renderers import (
     build_download_filename,
     render_export_json_bytes,
@@ -21,7 +22,7 @@ from export.export_renderers import (
 )
 
 APP_NAME = "HA AI Context Exporter"
-APP_VERSION = "0.1.0"
+APP_VERSION = VERSION
 APP_SLUG = "ha_ai_context_exporter"
 CORE_URL_CANDIDATES = (
     "http://supervisor/core",

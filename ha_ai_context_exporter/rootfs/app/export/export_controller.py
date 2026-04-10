@@ -78,13 +78,83 @@ def _parse_categories(categories_raw: str | None, variant: str) -> list[str]:
 
 
 
-def _build_environment(access_preview: dict) -> dict:
+def _build_environment(access_preview: dict, section_readability: bool) -> dict:
+    reachability = bool(access_preview.get("core_root_reachable"))
+    if section_readability:
+        reason = "at least one export category is readable"
+    elif reachability:
+        reason = "core reachable but export categories not readable"
+    else:
+        reason = "core endpoint not reachable"
+
     return {
         "container": access_preview.get("container_running"),
         "data_path": access_preview.get("has_data_path"),
         "config_path": access_preview.get("has_config_path"),
         "api_available": access_preview.get("api_based_analysis_possible"),
+        "reachability": reachability,
+        "readability": section_readability,
+        "reason": reason,
     }
+
+
+
+def _evaluate_completeness(active_sections: dict) -> tuple[str, list[str]]:
+    warnings: list[str] = []
+    if not active_sections:
+        return "none", warnings
+
+    readable = 0
+    for name, section in active_sections.items():
+        if section.get("readability"):
+            readable += 1
+            continue
+        reason = section.get("reason") or "unknown reason"
+        warnings.append(f"{name}: {reason}")
+
+    if readable == len(active_sections):
+        return "complete", warnings
+    if readable == 0:
+        return "none", warnings
+    return "partial", warnings
+
+
+
+def _build_areas_devices_section(structure_preview: dict) -> dict:
+    areas = structure_preview.get("areas_count")
+    devices = structure_preview.get("devices_count")
+    readable = isinstance(areas, int) and isinstance(devices, int)
+    reachable = bool(structure_preview.get("areas_available") or structure_preview.get("devices_available"))
+
+    if readable:
+        reason = "areas and devices readable from structure preview"
+    elif reachable:
+        reason = "areas/devices endpoints reachable but not readable"
+    else:
+        reason = "areas/devices endpoints not reachable"
+
+    return {
+        "status": "available" if readable else "unavailable",
+        "reason": reason,
+        "reachability": reachable,
+        "readability": readable,
+        "areas": areas,
+        "devices": devices,
+    }
+
+
+
+def _build_integrations_section() -> dict:
+    data = build_integrations_preview()
+    data.update(
+        {
+            "status": "unavailable",
+            "reason": "no dedicated integrations discovery source available",
+            "reachability": False,
+            "readability": False,
+        }
+    )
+    return data
 
 
 
@@ -114,27 +184,59 @@ def build_export_payload(
             "version": info.get("version"),
             "addon_slug": providers["addon_slug"],
         },
-        "environment": _build_environment(access_preview),
         "export_format": "ha-ai-context",
         "export_version": "1.0",
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
 
+    active_sections: dict[str, dict] = {}
+
     if "system" in active_categories:
-        payload["system"] = build_system_preview(ai_context)
+        section = build_system_preview(ai_context, structure_preview)
+        payload["system"] = section
+        active_sections["system"] = section
+
     if "entities" in active_categories:
-        payload["entities"] = build_entities_preview(structure_preview, domain_preview)
+        section = build_entities_preview(structure_preview, domain_preview)
+        payload["entities"] = section
+        active_sections["entities"] = section
+
     if "areas_devices" in active_categories:
-        payload["areas_devices"] = {
-            "areas": structure_preview.get("areas_count"),
-            "devices": structure_preview.get("devices_count"),
-        }
+        section = _build_areas_devices_section(structure_preview)
+        payload["areas_devices"] = section
+        active_sections["areas_devices"] = section
+
     if "logic" in active_categories:
-        payload["logic"] = build_logic_preview(logic_preview)
+        section = build_logic_preview(logic_preview)
+        payload["logic"] = section
+        active_sections["logic"] = section
+
     if "dashboard" in active_categories:
-        payload["dashboard"] = build_dashboard_preview(dashboard_preview)
+        section = build_dashboard_preview(dashboard_preview)
+        payload["dashboard"] = section
+        active_sections["dashboard"] = section
+
     if "integrations" in active_categories:
-        payload["integrations"] = build_integrations_preview()
+        section = _build_integrations_section()
+        payload["integrations"] = section
+        active_sections["integrations"] = section
+
+    data_completeness, warnings = _evaluate_completeness(active_sections)
+    any_readable = any(section.get("readability") for section in active_sections.values())
+    payload["environment"] = _build_environment(access_preview, any_readable)
+
+    if data_completeness == "complete":
+        discovery_status = "read_only_full_access"
+    elif data_completeness == "partial":
+        discovery_status = "read_only_partial_access"
+    elif payload["environment"].get("reachability"):
+        discovery_status = "reachable_not_readable"
+    else:
+        discovery_status = "limited_access"
+
+    payload["data_completeness"] = data_completeness
+    payload["discovery_status"] = discovery_status
+    payload["warnings"] = warnings
 
     payload["meta"] = {
         "mode": normalized_mode,
