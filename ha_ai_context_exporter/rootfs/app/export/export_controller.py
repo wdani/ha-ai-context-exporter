@@ -165,18 +165,6 @@ def _build_areas_devices_section(structure_preview: dict) -> dict:
 
 
 
-def _build_integrations_section() -> dict:
-    data = build_integrations_preview()
-    data.update(
-        {
-            "status": "unavailable",
-            "reason": "no dedicated integrations discovery source available",
-            "reachability": False,
-            "readability": False,
-        }
-    )
-    return data
-
 
 
 def build_export_payload(
@@ -198,6 +186,7 @@ def build_export_payload(
     logic_preview = providers["get_logic_preview"]()
     dashboard_preview = providers["get_dashboard_preview"]()
     domain_preview = providers["get_domain_preview"]()
+    metadata_preview = providers["get_metadata_preview"]()
 
     payload = {
         "tool": {
@@ -238,7 +227,7 @@ def build_export_payload(
         active_sections["dashboard"] = section
 
     if "integrations" in active_categories:
-        section = _build_integrations_section()
+        section = build_integrations_preview(metadata_preview, domain_preview)
         payload["integrations"] = section
         active_sections["integrations"] = section
 

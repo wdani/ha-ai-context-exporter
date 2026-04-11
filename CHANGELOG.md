@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.6 - 2026-04-11
+
+### Changed
+- Implement first real read-only integrations discovery using `config.components` as primary source and cautious fallbacks from `services`/`states`.
+- Add compact integrations fields: `count`, `items`, `top_items` with consistent semantic status.
+- Bump development version from `0.0.5` to `0.0.6`.
+
 ## 0.0.5 - 2026-04-11
 
 ### Changed

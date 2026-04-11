@@ -1,3 +1,9 @@
+## Version 0.0.6
+- Goal: replace integrations placeholder with first useful read-only integrations discovery.
+- Key changes: direct integrations from `config.components`, cautious derived fallbacks from services/states, compact `items`/`top_items`, and semantic status (`available`/`partial`/`unavailable`).
+- Result: `integrations` category can now return real discovered items when readable.
+- Next focus: improve coverage quality while keeping compact semantics.
+
 # AI Change History
 
 ## Version 0.0.3

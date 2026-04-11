@@ -281,6 +281,10 @@ def get_ha_metadata_preview() -> dict:
     states_count = None
     services_domain_count = None
     home_assistant_version = None
+    config_http_status = None
+    services_http_status = None
+    components: list[str] = []
+    services_domains: list[str] = []
 
     for candidate in CORE_API_BASE_CANDIDATES:
         if not probe_core_root(candidate)["reachable"]:
@@ -291,6 +295,8 @@ def get_ha_metadata_preview() -> dict:
         states_probe = probe_states_endpoint(candidate)
         services_probe = probe_services_endpoint(candidate)
 
+        config_http_status = config_probe["http_status"]
+        services_http_status = services_probe["http_status"]
         config_available = config_probe["reachable"]
         states_endpoint_reachable = states_probe["reachable"]
         services_endpoint_reachable = services_probe["reachable"]
@@ -301,6 +307,9 @@ def get_ha_metadata_preview() -> dict:
                 version_value = config_payload.get("version")
                 if isinstance(version_value, str):
                     home_assistant_version = version_value
+                components_value = config_payload.get("components")
+                if isinstance(components_value, list):
+                    components = sorted({item.strip() for item in components_value if isinstance(item, str) and item.strip()})
 
         if states_probe["http_status"] == 200:
             states_payload = fetch_json_on_200(candidate, "/states")
@@ -311,6 +320,7 @@ def get_ha_metadata_preview() -> dict:
             services_payload = fetch_json_on_200(candidate, "/services")
             if isinstance(services_payload, list):
                 services_domain_count = len(services_payload)
+                services_domains = sorted({item.get("domain").strip() for item in services_payload if isinstance(item, dict) and isinstance(item.get("domain"), str) and item.get("domain").strip()})
 
         break
 
@@ -325,6 +335,10 @@ def get_ha_metadata_preview() -> dict:
         "states_count": states_count,
         "services_domain_count": services_domain_count,
         "home_assistant_version": home_assistant_version,
+        "config_http_status": config_http_status,
+        "services_http_status": services_http_status,
+        "components": components,
+        "services_domains": services_domains,
     }
 
 
@@ -825,6 +839,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 "get_logic_preview": get_ha_logic_preview,
                 "get_dashboard_preview": get_ha_dashboard_preview,
                 "get_domain_preview": get_ha_domain_preview,
+                "get_metadata_preview": get_ha_metadata_preview,
                 "addon_slug": APP_SLUG,
             },
         )
