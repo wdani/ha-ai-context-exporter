@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.5 - 2026-04-11
+
+### Changed
+- Improve discovery semantics and coverage for export categories (`system`, `areas_devices`, `dashboard`) with consistent partial/available/unavailable status handling.
+- Make core proxy base explicit (`http://supervisor/core/api`) and avoid path-duplication risks.
+- Increase central request timeout to 5 seconds for more robust local proxy reads.
+
 ## 0.0.4 - 2026-04-11
 
 ### Changed

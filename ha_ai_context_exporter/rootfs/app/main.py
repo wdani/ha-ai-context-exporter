@@ -24,11 +24,12 @@ from export.export_renderers import (
 APP_NAME = "HA AI Context Exporter"
 APP_VERSION = VERSION
 APP_SLUG = "ha_ai_context_exporter"
-CORE_URL_CANDIDATES = (
-    "http://supervisor/core",
-    "http://homeassistant:8123",
-    "http://127.0.0.1:8123",
+CORE_API_BASE_CANDIDATES = (
+    "http://supervisor/core/api",
+    "http://homeassistant:8123/api",
+    "http://127.0.0.1:8123/api",
 )
+REQUEST_TIMEOUT_SECONDS = 5.0
 HOST = "0.0.0.0"
 PORT = int(os.getenv("PORT", "8099"))
 WEB_DIR = Path(__file__).resolve().parent / "web"
@@ -136,7 +137,7 @@ def probe_local_url(url: str, path: str) -> dict:
     request = urllib.request.Request(request_url, method="GET", headers=build_local_get_headers(request_url))
 
     try:
-        with urllib.request.urlopen(request, timeout=1.5) as response:
+        with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
             status = response.getcode()
             return {"reachable": status in (200, 401, 403), "http_status": status}
     except urllib.error.HTTPError as error:
@@ -154,7 +155,7 @@ def fetch_json_on_200(url: str, path: str) -> object | None:
     request = urllib.request.Request(request_url, method="GET", headers=build_local_get_headers(request_url))
 
     try:
-        with urllib.request.urlopen(request, timeout=1.5) as response:
+        with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
             if response.getcode() != 200:
                 return None
             return json.loads(response.read().decode("utf-8"))
@@ -163,35 +164,35 @@ def fetch_json_on_200(url: str, path: str) -> object | None:
 
 
 def probe_core_root(url: str) -> dict:
-    return probe_local_url(url, "/api/")
+    return probe_local_url(url, "/")
 
 
 def probe_config_endpoint(url: str) -> dict:
-    return probe_local_url(url, "/api/config")
+    return probe_local_url(url, "/config")
 
 
 def probe_states_endpoint(url: str) -> dict:
-    return probe_local_url(url, "/api/states")
+    return probe_local_url(url, "/states")
 
 
 def probe_services_endpoint(url: str) -> dict:
-    return probe_local_url(url, "/api/services")
+    return probe_local_url(url, "/services")
 
 
 def probe_areas_endpoint(url: str) -> dict:
-    return probe_local_url(url, "/api/areas")
+    return probe_local_url(url, "/areas")
 
 
 def probe_devices_endpoint(url: str) -> dict:
-    return probe_local_url(url, "/api/devices")
+    return probe_local_url(url, "/devices")
 
 
 def probe_dashboards_endpoint(url: str) -> dict:
-    return probe_local_url(url, "/api/lovelace/dashboards")
+    return probe_local_url(url, "/lovelace/dashboards")
 
 
 def probe_lovelace_config_endpoint(url: str) -> dict:
-    return probe_local_url(url, "/api/lovelace/config")
+    return probe_local_url(url, "/lovelace/config")
 
 
 def check_local_core_candidate(url: str) -> dict:
@@ -205,7 +206,7 @@ def load_states_snapshot_if_200(url: str, states_probe: dict | None = None) -> l
     if probe.get("http_status") != 200:
         return None
 
-    payload = fetch_json_on_200(url, "/api/states")
+    payload = fetch_json_on_200(url, "/states")
     return payload if isinstance(payload, list) else None
 
 
@@ -217,7 +218,7 @@ def get_ha_core_check_info() -> dict:
     prerequisites_look_ok = is_running_in_container() and data_exists and config_exists and app_exists
 
     checked_candidate = {"url": None, "reachable": False, "http_status": None}
-    for candidate in CORE_URL_CANDIDATES:
+    for candidate in CORE_API_BASE_CANDIDATES:
         result = check_local_core_candidate(candidate)
         checked_candidate = result
         if result["reachable"]:
@@ -238,12 +239,12 @@ def get_ha_core_check_info() -> dict:
 
 
 def get_ha_capabilities_info() -> dict:
-    best_candidate = CORE_URL_CANDIDATES[0]
+    best_candidate = CORE_API_BASE_CANDIDATES[0]
     api_root_reachable = False
     states_endpoint_reachable = False
     services_endpoint_reachable = False
 
-    for candidate in CORE_URL_CANDIDATES:
+    for candidate in CORE_API_BASE_CANDIDATES:
         api_root = probe_core_root(candidate)
         if not api_root["reachable"]:
             continue
@@ -273,7 +274,7 @@ def get_ha_capabilities_info() -> dict:
 # metadata
 
 def get_ha_metadata_preview() -> dict:
-    core_host_candidate = CORE_URL_CANDIDATES[0]
+    core_host_candidate = CORE_API_BASE_CANDIDATES[0]
     config_available = False
     states_endpoint_reachable = False
     services_endpoint_reachable = False
@@ -281,7 +282,7 @@ def get_ha_metadata_preview() -> dict:
     services_domain_count = None
     home_assistant_version = None
 
-    for candidate in CORE_URL_CANDIDATES:
+    for candidate in CORE_API_BASE_CANDIDATES:
         if not probe_core_root(candidate)["reachable"]:
             continue
 
@@ -295,19 +296,19 @@ def get_ha_metadata_preview() -> dict:
         services_endpoint_reachable = services_probe["reachable"]
 
         if config_probe["http_status"] == 200:
-            config_payload = fetch_json_on_200(candidate, "/api/config")
+            config_payload = fetch_json_on_200(candidate, "/config")
             if isinstance(config_payload, dict):
                 version_value = config_payload.get("version")
                 if isinstance(version_value, str):
                     home_assistant_version = version_value
 
         if states_probe["http_status"] == 200:
-            states_payload = fetch_json_on_200(candidate, "/api/states")
+            states_payload = fetch_json_on_200(candidate, "/states")
             if isinstance(states_payload, list):
                 states_count = len(states_payload)
 
         if services_probe["http_status"] == 200:
-            services_payload = fetch_json_on_200(candidate, "/api/services")
+            services_payload = fetch_json_on_200(candidate, "/services")
             if isinstance(services_payload, list):
                 services_domain_count = len(services_payload)
 
@@ -328,12 +329,12 @@ def get_ha_metadata_preview() -> dict:
 
 
 def get_ha_domain_preview() -> dict:
-    core_host_candidate = CORE_URL_CANDIDATES[0]
+    core_host_candidate = CORE_API_BASE_CANDIDATES[0]
     states_endpoint_reachable = False
     states_http_status = None
     domain_counts: dict[str, int] = {}
 
-    for candidate in CORE_URL_CANDIDATES:
+    for candidate in CORE_API_BASE_CANDIDATES:
         if not probe_core_root(candidate)["reachable"]:
             continue
 
@@ -372,7 +373,7 @@ def get_ha_domain_preview() -> dict:
 # structure
 
 def get_ha_structure_preview() -> dict:
-    core_host_candidate = CORE_URL_CANDIDATES[0]
+    core_host_candidate = CORE_API_BASE_CANDIDATES[0]
 
     areas_available = False
     devices_available = False
@@ -382,7 +383,7 @@ def get_ha_structure_preview() -> dict:
     devices_count = None
     entities_count = None
 
-    for candidate in CORE_URL_CANDIDATES:
+    for candidate in CORE_API_BASE_CANDIDATES:
         if not probe_core_root(candidate)["reachable"]:
             continue
 
@@ -396,12 +397,12 @@ def get_ha_structure_preview() -> dict:
         entities_available = entities_probe["reachable"]
 
         if areas_probe["http_status"] == 200:
-            areas_payload = fetch_json_on_200(candidate, "/api/areas")
+            areas_payload = fetch_json_on_200(candidate, "/areas")
             if isinstance(areas_payload, list):
                 areas_count = len(areas_payload)
 
         if devices_probe["http_status"] == 200:
-            devices_payload = fetch_json_on_200(candidate, "/api/devices")
+            devices_payload = fetch_json_on_200(candidate, "/devices")
             if isinstance(devices_payload, list):
                 devices_count = len(devices_payload)
 
@@ -432,7 +433,7 @@ def get_ha_structure_preview() -> dict:
 
 def get_ha_logic_preview() -> dict:
     """Return read-only logic area statistics derived from /api/states."""
-    core_host_candidate = CORE_URL_CANDIDATES[0]
+    core_host_candidate = CORE_API_BASE_CANDIDATES[0]
     states_endpoint_reachable = False
     states_http_status = None
 
@@ -440,7 +441,7 @@ def get_ha_logic_preview() -> dict:
     scripts_count = 0
     scenes_count = 0
 
-    for candidate in CORE_URL_CANDIDATES:
+    for candidate in CORE_API_BASE_CANDIDATES:
         if not probe_core_root(candidate)["reachable"]:
             continue
 
@@ -482,7 +483,7 @@ def get_ha_logic_preview() -> dict:
 
 def get_ha_dashboard_preview() -> dict:
     """Return cautious dashboard structure preview without exporting configurations."""
-    core_host_candidate = CORE_URL_CANDIDATES[0]
+    core_host_candidate = CORE_API_BASE_CANDIDATES[0]
 
     dashboards_available = False
     dashboards_count = None
@@ -490,7 +491,7 @@ def get_ha_dashboard_preview() -> dict:
     total_cards_count = None
     detected_view_types: list[str] = []
 
-    for candidate in CORE_URL_CANDIDATES:
+    for candidate in CORE_API_BASE_CANDIDATES:
         if not probe_core_root(candidate)["reachable"]:
             continue
 
@@ -502,12 +503,12 @@ def get_ha_dashboard_preview() -> dict:
         dashboards_available = dashboards_probe["reachable"] or lovelace_config_probe["reachable"]
 
         if dashboards_probe["http_status"] == 200:
-            dashboards_payload = fetch_json_on_200(candidate, "/api/lovelace/dashboards")
+            dashboards_payload = fetch_json_on_200(candidate, "/lovelace/dashboards")
             if isinstance(dashboards_payload, list):
                 dashboards_count = len(dashboards_payload)
 
         if lovelace_config_probe["http_status"] == 200:
-            config_payload = fetch_json_on_200(candidate, "/api/lovelace/config")
+            config_payload = fetch_json_on_200(candidate, "/lovelace/config")
             if isinstance(config_payload, dict):
                 views = config_payload.get("views")
                 if isinstance(views, list):
@@ -653,7 +654,7 @@ def get_ha_access_preview() -> dict:
     dashboards_endpoint_reachable = False
     lovelace_config_endpoint_reachable = False
 
-    for candidate in CORE_URL_CANDIDATES:
+    for candidate in CORE_API_BASE_CANDIDATES:
         root_probe = probe_core_root(candidate)
         if not root_probe["reachable"]:
             continue
@@ -708,7 +709,7 @@ def get_ha_access_preview() -> dict:
 
 def get_ha_auth_debug_info() -> dict:
     """Return token-safe diagnostics for core proxy auth/readability."""
-    core_url = CORE_URL_CANDIDATES[0]
+    core_url = CORE_API_BASE_CANDIDATES[0]
 
     def status_reason(http_status: int | None, reachable: bool, readable: bool) -> str:
         if readable:

@@ -104,17 +104,24 @@ def _evaluate_completeness(active_sections: dict) -> tuple[str, list[str]]:
     if not active_sections:
         return "none", warnings
 
-    readable = 0
+    available = 0
+    partial = 0
     for name, section in active_sections.items():
-        if section.get("readability"):
-            readable += 1
+        status = section.get("status")
+        if status == "available":
+            available += 1
+            continue
+        if status == "partial":
+            partial += 1
+            reason = section.get("reason") or "partially readable"
+            warnings.append(f"{name}: {reason}")
             continue
         reason = section.get("reason") or "unknown reason"
         warnings.append(f"{name}: {reason}")
 
-    if readable == len(active_sections):
+    if available == len(active_sections):
         return "complete", warnings
-    if readable == 0:
+    if available == 0 and partial == 0:
         return "none", warnings
     return "partial", warnings
 
@@ -123,22 +130,32 @@ def _evaluate_completeness(active_sections: dict) -> tuple[str, list[str]]:
 def _build_areas_devices_section(structure_preview: dict) -> dict:
     areas = structure_preview.get("areas_count")
     devices = structure_preview.get("devices_count")
-    readable = isinstance(areas, int) and isinstance(devices, int)
+    values = [areas, devices]
+    readable_values = [value for value in values if isinstance(value, int)]
+    readable = len(readable_values) > 0
+    full_readable = len(readable_values) == len(values)
     reachable = bool(structure_preview.get("areas_available") or structure_preview.get("devices_available"))
     areas_http_status = structure_preview.get("areas_http_status")
     devices_http_status = structure_preview.get("devices_http_status")
 
-    if readable:
+    if full_readable:
+        status = "available"
         reason = "areas and devices readable from structure preview"
+    elif readable:
+        status = "partial"
+        reason = "areas/devices data partially readable"
     elif areas_http_status in (401, 403) or devices_http_status in (401, 403):
+        status = "unavailable"
         reason = "core proxy unauthorized"
     elif reachable:
+        status = "unavailable"
         reason = "areas/devices endpoints reachable but not readable"
     else:
+        status = "unavailable"
         reason = "areas/devices endpoints not reachable"
 
     return {
-        "status": "available" if readable else "unavailable",
+        "status": status,
         "reason": reason,
         "reachability": reachable,
         "readability": readable,

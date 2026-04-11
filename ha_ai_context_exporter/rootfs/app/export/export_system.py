@@ -9,13 +9,19 @@ def build_system_preview(ai_context_preview: dict, structure_preview: dict) -> d
     devices_count = structure_preview.get("devices_count")
     areas_count = structure_preview.get("areas_count")
 
-    readable = all(isinstance(value, int) for value in (entities_count, devices_count, areas_count))
+    values = [entities_count, devices_count, areas_count]
+    readable_values = [value for value in values if isinstance(value, int)]
+    readable = len(readable_values) > 0
+    full_readable = len(readable_values) == len(values)
     reachable = bool(structure_preview.get("entities_available"))
     entities_http_status = structure_preview.get("entities_http_status")
 
-    if readable:
+    if full_readable:
         status = "available"
-        reason = "counts readable from structure preview"
+        reason = "all system summary counts are readable"
+    elif readable:
+        status = "partial"
+        reason = "system summary is partially readable"
     elif entities_http_status in (401, 403):
         status = "unavailable"
         reason = "core proxy unauthorized"
