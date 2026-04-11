@@ -14,14 +14,12 @@ def build_entities_preview(structure_preview: dict, domain_preview: dict) -> dic
     )
     readable = isinstance(entities_count, int)
 
-    token_configured = bool(domain_preview.get("token_configured"))
-
     if readable:
         status = "available"
         reason = "states data readable"
     elif states_http_status in (401, 403):
         status = "unavailable"
-        reason = "token configured but unauthorized" if token_configured else "no token configured"
+        reason = "core proxy unauthorized"
     elif reachable:
         status = "unavailable"
         reason = "states endpoint reachable but returned no readable data"

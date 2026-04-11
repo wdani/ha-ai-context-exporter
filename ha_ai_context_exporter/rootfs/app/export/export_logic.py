@@ -9,14 +9,12 @@ def build_logic_preview(logic_preview: dict) -> dict:
     reachable = bool(logic_preview.get("states_endpoint_reachable"))
     readable = states_http_status == 200
 
-    token_configured = bool(logic_preview.get("token_configured"))
-
     if readable:
         status = "available"
         reason = "logic entities readable from states endpoint"
     elif states_http_status in (401, 403):
         status = "unavailable"
-        reason = "token configured but unauthorized" if token_configured else "no token configured"
+        reason = "core proxy unauthorized"
     elif reachable:
         status = "unavailable"
         reason = "states endpoint reachable but not readable"

@@ -46,50 +46,23 @@ def get_app_info() -> dict:
 
 
 
-def load_addon_options() -> dict:
-    """Load add-on options from /data/options.json (read-only best effort)."""
-    options_path = Path("/data/options.json")
-    if not options_path.exists():
-        return {}
-    try:
-        data = json.loads(options_path.read_text(encoding="utf-8"))
-        return data if isinstance(data, dict) else {}
-    except (OSError, json.JSONDecodeError):
-        return {}
+def get_supervisor_token() -> str | None:
+    """Return supervisor token from environment, if available."""
+    value = os.getenv("SUPERVISOR_TOKEN", "")
+    token = value.strip()
+    return token if token else None
 
 
-def get_configured_ha_token() -> str | None:
-    """Return configured HA Long-Lived Access Token, if available."""
-    value = load_addon_options().get("ha_token")
-    if isinstance(value, str):
-        token = value.strip()
-        return token if token else None
-    return None
-
-
-def is_token_configured() -> bool:
-    return get_configured_ha_token() is not None
-
-
-def should_attach_token_to_url(url: str) -> bool:
-    """Allow bearer token only for local Home Assistant core hosts."""
+def should_attach_supervisor_token(url: str) -> bool:
+    """Allow supervisor token only for Home Assistant core proxy URL."""
     parsed = urllib.parse.urlparse(url)
-    host = parsed.hostname or ""
-    port = parsed.port
-    if not host:
-        return False
-
-    allowed_hosts = {"homeassistant", "127.0.0.1", "localhost"}
-    if host not in allowed_hosts:
-        return False
-
-    return (port is None) or (port == 8123)
+    return parsed.scheme == "http" and parsed.netloc == "supervisor" and parsed.path.startswith("/core/")
 
 
 def build_local_get_headers(url: str) -> dict[str, str]:
     """Build headers for local GET requests without leaking tokens to disallowed targets."""
-    token = get_configured_ha_token()
-    if token and should_attach_token_to_url(url):
+    token = get_supervisor_token()
+    if token and should_attach_supervisor_token(url):
         return {"Authorization": f"Bearer {token}"}
     return {}
 
@@ -261,7 +234,6 @@ def get_ha_core_check_info() -> dict:
         "local_core_candidate_reachable": checked_candidate["reachable"],
         "local_core_candidate_http_status": checked_candidate["http_status"],
         "next_safe_core_step_possible": next_safe_core_step_possible,
-        "token_configured": is_token_configured(),
     }
 
 
@@ -295,7 +267,6 @@ def get_ha_capabilities_info() -> dict:
         "states_endpoint_reachable": states_endpoint_reachable,
         "services_endpoint_reachable": services_endpoint_reachable,
         "safe_to_attempt_metadata_step": safe_to_attempt_metadata_step,
-        "token_configured": is_token_configured(),
     }
 
 
@@ -353,7 +324,6 @@ def get_ha_metadata_preview() -> dict:
         "states_count": states_count,
         "services_domain_count": services_domain_count,
         "home_assistant_version": home_assistant_version,
-        "token_configured": is_token_configured(),
     }
 
 
@@ -396,7 +366,6 @@ def get_ha_domain_preview() -> dict:
         "states_http_status": states_http_status,
         "domain_counts": domain_counts,
         "top_domains": [{"domain": domain, "count": count} for domain, count in top_domains],
-        "token_configured": is_token_configured(),
     }
 
 
@@ -456,7 +425,6 @@ def get_ha_structure_preview() -> dict:
         "areas_http_status": areas_probe["http_status"] if "areas_probe" in locals() else None,
         "devices_http_status": devices_probe["http_status"] if "devices_probe" in locals() else None,
         "entities_http_status": entities_probe["http_status"] if "entities_probe" in locals() else None,
-        "token_configured": is_token_configured(),
     }
 
 
@@ -507,7 +475,6 @@ def get_ha_logic_preview() -> dict:
         "automations_count": automations_count,
         "scripts_count": scripts_count,
         "scenes_count": scenes_count,
-        "token_configured": is_token_configured(),
     }
 
 
@@ -578,7 +545,6 @@ def get_ha_dashboard_preview() -> dict:
         "detected_view_types": detected_view_types,
         "dashboards_http_status": dashboards_probe["http_status"] if "dashboards_probe" in locals() else None,
         "lovelace_config_http_status": lovelace_config_probe["http_status"] if "lovelace_config_probe" in locals() else None,
-        "token_configured": is_token_configured(),
     }
 
 
@@ -607,7 +573,6 @@ def get_ha_ai_context_preview() -> dict:
         "addon_slug": APP_SLUG,
         "system_size": system_size,
         "entities_count": entities_count,
-        "token_configured": is_token_configured(),
         "devices_count": structure.get("devices_count"),
         "areas_count": structure.get("areas_count"),
         "automations_count": logic.get("automations_count"),
@@ -736,9 +701,48 @@ def get_ha_access_preview() -> dict:
         "api_based_analysis_possible": api_based_analysis_possible,
         "dashboard_analysis_possible": dashboard_analysis_possible,
         "export_prerequisites_summary": export_prerequisites_summary,
-        "token_configured": is_token_configured(),
     }
 
+
+
+
+def get_ha_auth_debug_info() -> dict:
+    """Return token-safe diagnostics for core proxy auth/readability."""
+    core_url = CORE_URL_CANDIDATES[0]
+
+    def status_reason(http_status: int | None, reachable: bool, readable: bool) -> str:
+        if readable:
+            return "endpoint readable"
+        if http_status in (401, 403):
+            return "core proxy unauthorized"
+        if reachable:
+            return "endpoint reachable but not readable"
+        return "core proxy unreachable"
+
+    core_probe = probe_core_root(core_url)
+    states_probe = probe_states_endpoint(core_url)
+    config_probe = probe_config_endpoint(core_url)
+
+    return {
+        "core_proxy": {
+            "reachability": core_probe["reachable"],
+            "readability": core_probe.get("http_status") == 200,
+            "http_status": core_probe.get("http_status"),
+            "reason": status_reason(core_probe.get("http_status"), core_probe["reachable"], core_probe.get("http_status") == 200),
+        },
+        "states": {
+            "reachability": states_probe["reachable"],
+            "readability": states_probe.get("http_status") == 200,
+            "http_status": states_probe.get("http_status"),
+            "reason": status_reason(states_probe.get("http_status"), states_probe["reachable"], states_probe.get("http_status") == 200),
+        },
+        "config": {
+            "reachability": config_probe["reachable"],
+            "readability": config_probe.get("http_status") == 200,
+            "http_status": config_probe.get("http_status"),
+            "reason": status_reason(config_probe.get("http_status"), config_probe["reachable"], config_probe.get("http_status") == 200),
+        },
+    }
 
 class RequestHandler(BaseHTTPRequestHandler):
     def _normalize_request_path(self, path: str) -> str:
@@ -878,6 +882,9 @@ class RequestHandler(BaseHTTPRequestHandler):
             return
         if normalized_path == "/api/ha-access-preview":
             self._send_json(get_ha_access_preview())
+            return
+        if normalized_path == "/api/ha-auth-debug":
+            self._send_json(get_ha_auth_debug_info())
             return
         if normalized_path == "/api/ai-export-preview":
             self._send_json(get_ai_export_preview())

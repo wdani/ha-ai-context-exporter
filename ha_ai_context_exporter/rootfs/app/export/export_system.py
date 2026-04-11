@@ -11,7 +11,6 @@ def build_system_preview(ai_context_preview: dict, structure_preview: dict) -> d
 
     readable = all(isinstance(value, int) for value in (entities_count, devices_count, areas_count))
     reachable = bool(structure_preview.get("entities_available"))
-    token_configured = bool(structure_preview.get("token_configured"))
     entities_http_status = structure_preview.get("entities_http_status")
 
     if readable:
@@ -19,7 +18,7 @@ def build_system_preview(ai_context_preview: dict, structure_preview: dict) -> d
         reason = "counts readable from structure preview"
     elif entities_http_status in (401, 403):
         status = "unavailable"
-        reason = "token configured but unauthorized" if token_configured else "no token configured"
+        reason = "core proxy unauthorized"
     elif reachable:
         status = "unavailable"
         reason = "structure endpoint reachable but not readable"
