@@ -347,7 +347,7 @@ Nicht nur Struktur, sondern reale Daten liefern.
 - entities discovery
 - top domains
 - logic counts
-- erste integrations discovery
+- integrations cleanup (erste Qualitätsstufe)
 - system partial summary
 - saubere Status-Semantik
 
@@ -603,7 +603,7 @@ Die konkrete technische Befüllung kann später schrittweise präzisiert werden.
 - `/api/export/download`
 - `/api/ha-auth-debug`
 - system / entities / logic summary
-- erste integrations discovery
+- integrations cleanup (erste Qualitätsstufe)
 - AI-Projektdokumentation
 - Review-/Archiv-/Changelog-Workflow
 
@@ -611,10 +611,9 @@ Die konkrete technische Befüllung kann später schrittweise präzisiert werden.
 - system summary
 - dashboard summary
 - areas/devices discovery
-- integrations discovery (erste Version, noch Qualitätsverbesserung nötig)
+- integrations discovery (bereinigt, weitere Qualitätsverbesserung weiterhin sinnvoll)
 
 ## Noch offen
-- bereinigte Integrationssicht
 - Entity Context
 - Relationship Layer
 - Logic Deep Export

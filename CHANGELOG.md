@@ -10,6 +10,13 @@ All notable changes to this project will be documented in this file.
 - Prioritize `user_integration` entries over `core_component` in `top_items` with stable alphabetical ordering and keep compact max-10 output.
 - Bump version from `0.0.6` to `0.0.7`.
 
+## 0.0.7 - 2026-04-12 (docs)
+
+### Docs
+- Repair `docs/ai/AI_DEVELOPMENT_TREE.md` formatting by removing accidental escaped newline sequences and restoring normal Markdown line breaks.
+- Apply minimal roadmap status wording updates to reflect current integrations cleanup state.
+
+
 ## 0.0.6 - 2026-04-12
 
 ### Docs
