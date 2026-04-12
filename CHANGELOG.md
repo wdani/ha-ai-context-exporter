@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.7 - 2026-04-12
+
+### Changed
+- Improve integrations discovery quality by normalizing dotted component names (e.g. `mqtt.sensor`) to main integrations (e.g. `mqtt`) with stable deduplication.
+- Introduce compact integration classification via `kind` (`user_integration` / `core_component`) while keeping core/internal components visible in `items`.
+- Prioritize `user_integration` entries over `core_component` in `top_items` with stable alphabetical ordering and keep compact max-10 output.
+- Bump version from `0.0.6` to `0.0.7`.
+
 ## 0.0.6 - 2026-04-12
 
 ### Docs

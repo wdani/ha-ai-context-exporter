@@ -2,38 +2,104 @@
 
 from __future__ import annotations
 
+CORE_COMPONENTS = {
+    "api",
+    "auth",
+    "automation",
+    "config",
+    "frontend",
+    "persistent_notification",
+    "scene",
+    "script",
+    "system_log",
+}
 
-def _normalize_names(values: list[str]) -> list[str]:
-    return sorted({item.strip() for item in values if isinstance(item, str) and item.strip()})
+SOURCE_PRIORITY = {
+    "config.components": 0,
+    "services": 1,
+    "states": 2,
+}
+
+
+def _clean_names(values: list[str]) -> list[str]:
+    return [item.strip() for item in values if isinstance(item, str) and item.strip()]
+
+
+def _normalize_integration_name(name: str) -> str:
+    """Reduce platform-style names (e.g. mqtt.sensor) to main integration (mqtt)."""
+    return name.split(".", 1)[0].strip()
+
+
+def _kind_for_name(name: str) -> str:
+    if name in CORE_COMPONENTS:
+        return "core_component"
+    return "user_integration"
+
+
+def _upsert_item(items_by_name: dict[str, dict], *, name: str, source: str, derived: bool) -> None:
+    if not name:
+        return
+
+    existing = items_by_name.get(name)
+    if existing is None:
+        items_by_name[name] = {
+            "name": name,
+            "source": source,
+            "derived": derived,
+            "kind": _kind_for_name(name),
+        }
+        return
+
+    current_priority = SOURCE_PRIORITY.get(existing["source"], 99)
+    new_priority = SOURCE_PRIORITY.get(source, 99)
+    if new_priority < current_priority:
+        existing["source"] = source
+        existing["derived"] = derived
 
 
 def build_integrations_preview(metadata_preview: dict, domain_preview: dict) -> dict:
-    """Build first-pass integrations view from config.components with safe fallbacks."""
-    direct_components = _normalize_names(metadata_preview.get("components", []))
-    service_domains = _normalize_names(metadata_preview.get("services_domains", []))
-    states_domains = _normalize_names(list((domain_preview.get("domain_counts") or {}).keys()))
+    """Build integrations view from config.components with cautious fallback reduction."""
+    direct_components = _clean_names(metadata_preview.get("components", []))
+    service_domains = _clean_names(metadata_preview.get("services_domains", []))
+    states_domains = _clean_names(list((domain_preview.get("domain_counts") or {}).keys()))
 
-    items: list[dict] = []
-    seen: set[str] = set()
+    items_by_name: dict[str, dict] = {}
 
-    for name in direct_components:
-        seen.add(name)
-        items.append({"name": name, "source": "config.components", "derived": False})
+    for raw_name in sorted(direct_components):
+        normalized_name = _normalize_integration_name(raw_name)
+        _upsert_item(
+            items_by_name,
+            name=normalized_name,
+            source="config.components",
+            derived=False,
+        )
 
-    for name in service_domains:
-        if name in seen:
-            continue
-        seen.add(name)
-        items.append({"name": name, "source": "services", "derived": True})
+    for raw_name in sorted(service_domains):
+        normalized_name = _normalize_integration_name(raw_name)
+        _upsert_item(
+            items_by_name,
+            name=normalized_name,
+            source="services",
+            derived=True,
+        )
 
-    for name in states_domains:
-        if name in seen:
-            continue
-        seen.add(name)
-        items.append({"name": name, "source": "states", "derived": True})
+    for raw_name in sorted(states_domains):
+        normalized_name = _normalize_integration_name(raw_name)
+        _upsert_item(
+            items_by_name,
+            name=normalized_name,
+            source="states",
+            derived=True,
+        )
 
-    items.sort(key=lambda item: item["name"])
-    top_items = items[:10]
+    items = sorted(items_by_name.values(), key=lambda item: item["name"])
+    top_items = sorted(
+        items,
+        key=lambda item: (
+            0 if item["kind"] == "user_integration" else 1,
+            item["name"],
+        ),
+    )[:10]
 
     reachability = bool(
         metadata_preview.get("config_available")
@@ -41,7 +107,7 @@ def build_integrations_preview(metadata_preview: dict, domain_preview: dict) -> 
         or domain_preview.get("states_endpoint_reachable")
     )
 
-    if direct_components:
+    if any(item["source"] == "config.components" for item in items):
         status = "available"
         reason = "derived from config.components"
         readability = True
