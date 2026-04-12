@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.6 - 2026-04-12
+
+### Docs
+- Add `docs/ai/AI_DEVELOPMENT_TREE.md` as official development tree/roadmap document from the provided source file.
+- Update `review_bundle.md` and archive it as `docs/review_bundles/2026-04-12_0.0.6_ai-development-tree.md`.
+
 ## 0.0.6 - 2026-04-11
 
 ### Changed
