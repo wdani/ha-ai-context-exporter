@@ -18,6 +18,8 @@ Before working on the next task, treat these project documents as the main conte
 - docs/ai/AI_CURRENT_STATE.md
 - docs/ai/AI_DEVELOPMENT_TREE.md
 - docs/ai/AI_CHANGE_HISTORY.md
+- docs/ai/AI_NEW_CHAT_AND_CODEX_GUIDE.md
+- docs/ai/AI_STANDARD_STARTPROMPT.md
 - docs/development/AI_WORKFLOW.md
 
 Core workflow principle:
@@ -36,7 +38,7 @@ Core rules:
 - no service calls
 - no state changes
 - no token leaks
-- rootfs/app/version.py remains the single source of truth for versioning
+- ha_ai_context_exporter/rootfs/app/version.py remains the single source of truth for versioning
 - warnings must remain a list of strings
 - review_bundle.md, CHANGELOG.md and docs/review_bundles/ must be maintained properly
 - AI documents should only be updated where actually needed

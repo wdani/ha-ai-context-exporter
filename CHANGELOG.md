@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.7 - 2026-04-18 (docs)
+
+### Docs
+- Add the new-chat/Codex guide and standard start prompt to the central standard-context lists.
+- Standardize the documented version source path as `ha_ai_context_exporter/rootfs/app/version.py`.
+
 ## 0.0.7 - 2026-04-17 (docs)
 
 ### Docs
