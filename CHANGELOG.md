@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.7 - 2026-04-17 (docs)
+
+### Docs
+- Add official new-chat/Codex guide at `docs/ai/AI_NEW_CHAT_AND_CODEX_GUIDE.md`.
+- Add official standard start prompt at `docs/ai/AI_STANDARD_STARTPROMPT.md`.
+- Clarify the preferred one-chat, one-task, one-branch, one-review, one-merge workflow in `docs/development/AI_WORKFLOW.md`.
+- Document the required Codex handoff blocks: COMMIT SUMMARY, PR / MERGE DESCRIPTION and NEXT CHAT START PROMPT.
+
 ## 0.0.7 - 2026-04-12
 
 ### Changed
