@@ -1,12 +1,13 @@
 # AI Current State
 
 ## Current version
-`0.0.7`
+`0.0.8`
 
 ## Export status currently observed
 - `system = partial`
 - `entities = available`
 - `logic = available`
+- `areas_devices = available/partial/unavailable` (depending on Areas/Devices endpoint readability)
 - `integrations = available/partial` (abhängig von Lesbarkeit über Core Proxy)
 
 ## Known limitations
@@ -15,4 +16,5 @@
 - Core-/interne Komponenten bleiben sichtbar, werden aber als `kind = core_component` markiert.
 - `top_items` priorisiert `user_integration` vor `core_component` und bleibt auf max. 10 Einträge begrenzt.
 - Areas/devices discovery kann je nach Proxy-Lesbarkeit unvollständig sein.
+- Areas/devices discovery now also tolerates direct list wrappers such as `areas`, `devices`, `data`, `items`, and `result`; no inferred relationships are exported.
 - Dashboard metadata kann je nach Endpoint-Lesbarkeit begrenzt sein.

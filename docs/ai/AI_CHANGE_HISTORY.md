@@ -1,5 +1,11 @@
 # AI Change History
 
+## Version 0.0.8
+- Goal: improve Areas / Devices discovery robustness without architecture changes.
+- Key changes: count readable `/areas` and `/devices` payloads when they are direct lists or small explicit wrappers (`areas`, `devices`, `data`, `items`, `result`).
+- Result: `areas_devices` keeps compact and honest available/partial/unavailable semantics while tolerating harmless response-shape differences.
+- Next focus: continue Discovery Quality phase with dashboard robustness before deeper Entity Context or Relationship work.
+
 ## Version 0.0.7
 - Goal: integrations discovery quality cleanup without architecture changes.
 - Key changes: normalize dotted component names to main integration (`mqtt.sensor` -> `mqtt`), add simple `kind` classification (`user_integration` / `core_component`), keep core components visible, and prioritize user integrations in `top_items`.

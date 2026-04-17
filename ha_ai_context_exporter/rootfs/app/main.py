@@ -386,6 +386,30 @@ def get_ha_domain_preview() -> dict:
 
 # structure
 
+def _count_collection_payload(payload: object, primary_key: str) -> int | None:
+    """Count direct list payloads and small, explicit list wrappers."""
+    if isinstance(payload, list):
+        return len(payload)
+
+    if not isinstance(payload, dict):
+        return None
+
+    primary_value = payload.get(primary_key)
+    if isinstance(primary_value, list):
+        return len(primary_value)
+
+    for wrapper_key in ("data", "items", "result"):
+        wrapper_value = payload.get(wrapper_key)
+        if isinstance(wrapper_value, list):
+            return len(wrapper_value)
+        if isinstance(wrapper_value, dict):
+            nested_value = wrapper_value.get(primary_key)
+            if isinstance(nested_value, list):
+                return len(nested_value)
+
+    return None
+
+
 def get_ha_structure_preview() -> dict:
     core_host_candidate = CORE_API_BASE_CANDIDATES[0]
 
@@ -412,13 +436,11 @@ def get_ha_structure_preview() -> dict:
 
         if areas_probe["http_status"] == 200:
             areas_payload = fetch_json_on_200(candidate, "/areas")
-            if isinstance(areas_payload, list):
-                areas_count = len(areas_payload)
+            areas_count = _count_collection_payload(areas_payload, "areas")
 
         if devices_probe["http_status"] == 200:
             devices_payload = fetch_json_on_200(candidate, "/devices")
-            if isinstance(devices_payload, list):
-                devices_count = len(devices_payload)
+            devices_count = _count_collection_payload(devices_payload, "devices")
 
         entities_payload = load_states_snapshot_if_200(candidate, entities_probe)
         if entities_payload is not None:
