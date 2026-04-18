@@ -12,6 +12,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
+from export.export_entities import build_compact_entity_items
 from export.export_controller import ExportValidationError, build_export_payload
 from version import VERSION
 from export.export_renderers import (
@@ -342,11 +343,12 @@ def get_ha_metadata_preview() -> dict:
     }
 
 
-def get_ha_domain_preview() -> dict:
+def get_ha_domain_preview(include_entity_items: bool = False) -> dict:
     core_host_candidate = CORE_API_BASE_CANDIDATES[0]
     states_endpoint_reachable = False
     states_http_status = None
     domain_counts: dict[str, int] = {}
+    entity_items: list[dict] | None = None
 
     for candidate in CORE_API_BASE_CANDIDATES:
         if not probe_core_root(candidate)["reachable"]:
@@ -368,11 +370,13 @@ def get_ha_domain_preview() -> dict:
                 domain = entity_id.split(".", 1)[0]
                 if domain:
                     domain_counts[domain] = domain_counts.get(domain, 0) + 1
+            if include_entity_items:
+                entity_items = build_compact_entity_items(states_payload)
         break
 
     top_domains = sorted(domain_counts.items(), key=lambda item: item[1], reverse=True)[:10]
 
-    return {
+    result = {
         "name": APP_NAME,
         "version": APP_VERSION,
         "addon_slug": APP_SLUG,
@@ -382,6 +386,10 @@ def get_ha_domain_preview() -> dict:
         "domain_counts": domain_counts,
         "top_domains": [{"domain": domain, "count": count} for domain, count in top_domains],
     }
+    if entity_items is not None:
+        result["entity_items"] = entity_items
+
+    return result
 
 
 # structure
@@ -879,7 +887,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 "get_structure_preview": get_ha_structure_preview,
                 "get_logic_preview": get_ha_logic_preview,
                 "get_dashboard_preview": get_ha_dashboard_preview,
-                "get_domain_preview": get_ha_domain_preview,
+                "get_domain_preview": lambda: get_ha_domain_preview(include_entity_items=True),
                 "get_metadata_preview": get_ha_metadata_preview,
                 "addon_slug": APP_SLUG,
             },

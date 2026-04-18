@@ -1,7 +1,7 @@
 # AI Current State
 
 ## Current version
-`0.0.9`
+`0.0.10`
 
 ## Export status currently observed
 - `system = partial`
@@ -21,3 +21,8 @@
 - Dashboard metadata kann je nach Endpoint-Lesbarkeit begrenzt sein.
 - Dashboard discovery now tolerates small explicit wrappers for the existing `/lovelace/dashboards` and `/lovelace/config` GET payloads; output remains compact counts only with no entity extraction or relationship logic.
 - A follow-up dashboard GET path investigation found no additional validated Core Proxy REST GET path beyond the existing Lovelace probes. If those existing endpoints are unreachable in a real HA environment, the dashboard category remains honestly unavailable instead of using speculative WebSocket, frontend HTML, POST/template, or file-parsing fallbacks.
+- Current observed export examples may show `environment.config_path = false`; this does not block the current `/states`-only Entity Context slice, but it must be rechecked before starting any File / YAML Context work.
+- The `entities` category now includes the first compact Entity Context slice as `items` when `/states` is readable.
+- `entities.items` is intentionally capped at 50 entries for this first slice, sorted by `entity_id`, and includes only `entity_id`, derived `domain`, direct `state`, and direct plain-string `attributes.friendly_name` (or `null`).
+- The 50-item cap is a temporary first-slice limitation and must be reevaluated when the project moves beyond compact Entity Context or introduces stronger mode-specific entity depth.
+- Entity Context does not yet include raw attributes, important attributes, area/device/integration relationships, aliases, semantic inference, dashboard links, or YAML/file context.

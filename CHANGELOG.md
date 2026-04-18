@@ -8,6 +8,15 @@ All notable changes to this project will be documented in this file.
 - Document the dashboard GET path investigation: no additional validated Core Proxy REST GET path was found beyond the existing Lovelace probes, so no dashboard fallback code or version bump was added.
 - Remove obsolete `docs/startvorlage für neuen chat-md`; the active official start guidance remains in the AI docs.
 
+## 0.0.10 - 2026-04-18
+
+### Changed
+- Add the first compact Entity Context slice under `entities.items`, built only from readable `/states` data.
+- Keep existing `entities` summary fields intact while adding capped per-entity items with `entity_id`, derived `domain`, direct `state`, and direct plain-string `friendly_name`.
+- Sort compact entity items by `entity_id`, cap output at 50 entries, skip malformed entries safely, and omit `items` when `/states` is unauthorized or unreadable.
+- Keep the export read-only and GET-only with no relationship logic, no raw/full attributes, no dashboard/areas/devices/integrations changes, no YAML/file parsing, and no analyzer logic.
+- Bump version from `0.0.9` to `0.0.10`.
+
 ## 0.0.9 - 2026-04-18
 
 ### Changed
@@ -16,6 +25,7 @@ All notable changes to this project will be documented in this file.
 - Keep request logging token-safe by logging the normalized local path instead of the raw ingress-prefixed request path.
 - Keep discovery strictly read-only with the existing local GET-only Core Proxy architecture and no new dashboard endpoint families, transport paths, relationship logic, or entity extraction.
 - Bump version from `0.0.8` to `0.0.9`.
+
 ## 0.0.8 - 2026-04-18 (docs)
 
 ### Docs
