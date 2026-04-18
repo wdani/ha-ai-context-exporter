@@ -1,7 +1,7 @@
 # AI Current State
 
 ## Current version
-`0.0.8`
+`0.0.9`
 
 ## Export status currently observed
 - `system = partial`
@@ -19,3 +19,4 @@
 - Areas/devices discovery now also tolerates direct list wrappers such as `areas`, `devices`, `data`, `items`, and `result`; no inferred relationships are exported.
 - No additional GET-compatible Areas/Devices fallback path has been validated inside the current backend model; registry-style list access remains outside this task because it would require WebSocket/RPC-style access or POST-based template handling.
 - Dashboard metadata kann je nach Endpoint-Lesbarkeit begrenzt sein.
+- Dashboard discovery now tolerates small explicit wrappers for the existing `/lovelace/dashboards` and `/lovelace/config` GET payloads; output remains compact counts only with no entity extraction or relationship logic.

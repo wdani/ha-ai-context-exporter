@@ -410,6 +410,26 @@ def _count_collection_payload(payload: object, primary_key: str) -> int | None:
     return None
 
 
+def _extract_lovelace_config_payload(payload: object) -> dict | None:
+    """Return a Lovelace config object only when `views` is clearly readable."""
+    if not isinstance(payload, dict):
+        return None
+
+    views = payload.get("views")
+    if isinstance(views, list):
+        return payload
+
+    for wrapper_key in ("config", "data", "result"):
+        wrapper_value = payload.get(wrapper_key)
+        if not isinstance(wrapper_value, dict):
+            continue
+        views = wrapper_value.get("views")
+        if isinstance(views, list):
+            return wrapper_value
+
+    return None
+
+
 def get_ha_structure_preview() -> dict:
     core_host_candidate = CORE_API_BASE_CANDIDATES[0]
 
@@ -540,33 +560,32 @@ def get_ha_dashboard_preview() -> dict:
 
         if dashboards_probe["http_status"] == 200:
             dashboards_payload = fetch_json_on_200(candidate, "/lovelace/dashboards")
-            if isinstance(dashboards_payload, list):
-                dashboards_count = len(dashboards_payload)
+            dashboards_count = _count_collection_payload(dashboards_payload, "dashboards")
 
         if lovelace_config_probe["http_status"] == 200:
             config_payload = fetch_json_on_200(candidate, "/lovelace/config")
-            if isinstance(config_payload, dict):
+            config_payload = _extract_lovelace_config_payload(config_payload)
+            if config_payload is not None:
                 views = config_payload.get("views")
-                if isinstance(views, list):
-                    total_views_count = len(views)
-                    cards_total = 0
-                    view_types: set[str] = set()
+                total_views_count = len(views)
+                cards_total = 0
+                view_types: set[str] = set()
 
-                    for view in views:
-                        if not isinstance(view, dict):
-                            continue
-                        cards = view.get("cards")
-                        if isinstance(cards, list):
-                            cards_total += len(cards)
-                        view_type = view.get("type")
-                        if isinstance(view_type, str) and view_type:
-                            view_types.add(view_type)
+                for view in views:
+                    if not isinstance(view, dict):
+                        continue
+                    cards = view.get("cards")
+                    if isinstance(cards, list):
+                        cards_total += len(cards)
+                    view_type = view.get("type")
+                    if isinstance(view_type, str) and view_type:
+                        view_types.add(view_type)
 
-                    total_cards_count = cards_total
-                    detected_view_types = sorted(view_types)
+                total_cards_count = cards_total
+                detected_view_types = sorted(view_types)
 
-                    if dashboards_count is None:
-                        dashboards_count = 1
+                if dashboards_count is None:
+                    dashboards_count = 1
 
         break
 
@@ -868,7 +887,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:  # noqa: N802
         normalized_path = self._normalize_request_path(self.path)
-        print(f"GET {self.path} -> {normalized_path}")
+        print(f"GET {normalized_path}")
 
         if normalized_path == "/health":
             self._send_json({"status": "ok"})

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.9 - 2026-04-18
+
+### Changed
+- Improve dashboard discovery robustness by accepting small explicit wrapper shapes from readable `/lovelace/dashboards` and `/lovelace/config` payloads.
+- Preserve compact `dashboard` export semantics with counts only: `dashboards`, `views`, and `cards`.
+- Keep request logging token-safe by logging the normalized local path instead of the raw ingress-prefixed request path.
+- Keep discovery strictly read-only with the existing local GET-only Core Proxy architecture and no new dashboard endpoint families, transport paths, relationship logic, or entity extraction.
+- Bump version from `0.0.8` to `0.0.9`.
 ## Unreleased - 2026-04-18
 
 ### Docs
