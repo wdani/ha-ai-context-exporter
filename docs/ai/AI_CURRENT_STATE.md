@@ -17,4 +17,5 @@
 - `top_items` priorisiert `user_integration` vor `core_component` und bleibt auf max. 10 Einträge begrenzt.
 - Areas/devices discovery kann je nach Proxy-Lesbarkeit unvollständig sein.
 - Areas/devices discovery now also tolerates direct list wrappers such as `areas`, `devices`, `data`, `items`, and `result`; no inferred relationships are exported.
+- No additional GET-compatible Areas/Devices fallback path has been validated inside the current backend model; registry-style list access remains outside this task because it would require WebSocket/RPC-style access or POST-based template handling.
 - Dashboard metadata kann je nach Endpoint-Lesbarkeit begrenzt sein.

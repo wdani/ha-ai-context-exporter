@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased - 2026-04-18
+
+### Docs
+- Document that no additional GET-compatible Areas / Devices fallback path has been validated inside the current backend architecture.
+- Keep Areas / Devices discovery conservative: direct readable endpoints only, no WebSocket/RPC bridge, no POST-based template fallback, and no inferred relationship data.
+- Keep the application version at `0.0.8` because no functional fallback code was shipped.
+
 ## 0.0.8 - 2026-04-18
 
 ### Changed
