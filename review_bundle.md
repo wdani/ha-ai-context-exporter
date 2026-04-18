@@ -12,9 +12,6 @@
 
 ## Changed files
 
-- `ha_ai_context_exporter/rootfs/app/main.py`
-- `ha_ai_context_exporter/rootfs/app/version.py`
-- `ha_ai_context_exporter/config.yaml`
 - `docs/ai/AI_CURRENT_STATE.md`
 - `docs/ai/AI_CHANGE_HISTORY.md`
 - `CHANGELOG.md`

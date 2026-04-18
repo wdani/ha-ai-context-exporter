@@ -10,6 +10,12 @@ All notable changes to this project will be documented in this file.
 - Keep request logging token-safe by logging the normalized local path instead of the raw ingress-prefixed request path.
 - Keep discovery strictly read-only with the existing local GET-only Core Proxy architecture and no new dashboard endpoint families, transport paths, relationship logic, or entity extraction.
 - Bump version from `0.0.8` to `0.0.9`.
+## Unreleased - 2026-04-18
+
+### Docs
+- Document that no additional GET-compatible Areas / Devices fallback path has been validated inside the current backend architecture.
+- Keep Areas / Devices discovery conservative: direct readable endpoints only, no WebSocket/RPC bridge, no POST-based template fallback, and no inferred relationship data.
+- Keep the application version at `0.0.8` because no functional fallback code was shipped.
 
 ## 0.0.8 - 2026-04-18
 
