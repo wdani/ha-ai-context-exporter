@@ -1,5 +1,13 @@
 # AI Change History
 
+## Version 0.0.10
+- Goal: introduce the first minimal Entity Context slice without changing the read-only architecture or category semantics.
+- Key changes: add compact `entities.items` from the existing readable `/states` snapshot, sorted by `entity_id` and capped at 50 entries.
+- Item fields: `entity_id`, derived `domain`, direct `state`, and direct plain-string `attributes.friendly_name` as `friendly_name`; missing or non-string friendly names become `null`.
+- Result: `entities` now remains a compact summary while exposing a small useful entity list for AI/system understanding; unauthorized or unreadable `/states` still omits `items` and preserves existing status/reason semantics.
+- Limitation: the 50-item cap is an intentional first-slice constraint and must be reevaluated when Entity Context moves beyond this compact slice or mode-specific entity depth is introduced.
+- Scope guard: no relationship logic, no raw/full attributes, no dashboard/areas/devices/integrations changes, no YAML/file parsing, and no analyzer logic.
+
 ## 2026-04-18 - Dashboard GET path investigation
 - Goal: check whether one small additional dashboard GET path can improve dashboard reachability/readability after the `0.0.9` wrapper-tolerance step.
 - Finding: no additional dashboard-specific REST GET path could be validated inside the existing local Core Proxy architecture; richer Home Assistant panel/dashboard access is exposed through WebSocket commands or frontend HTML, which are outside this task.
