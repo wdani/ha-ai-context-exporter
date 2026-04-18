@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased - 2026-04-18
 
+### Repository Hygiene
+- Expand `.gitattributes` LF normalization coverage for the tracked text file types currently used in the repository, including Markdown, YAML, HTML, CSS, dotfiles, and `LICENSE`, to reduce CRLF-only working-tree noise on Windows.
+- Keep this as a repository hygiene change only, with no exporter behavior changes and no version bump.
+
 ### Docs
 - Document the dashboard GET path investigation: no additional validated Core Proxy REST GET path was found beyond the existing Lovelace probes, so no dashboard fallback code or version bump was added.
 - Remove obsolete `docs/startvorlage für neuen chat-md`; the active official start guidance remains in the AI docs.

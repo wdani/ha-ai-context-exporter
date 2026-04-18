@@ -1,5 +1,12 @@
 # AI Change History
 
+## 2026-04-18 - Repository line-ending normalization
+- Goal: reduce false CRLF / line-ending noise on Windows without changing exporter behavior or project architecture.
+- Key changes: expand `.gitattributes` for the tracked text file types currently used by the repository: Markdown, YAML, HTML, CSS, `.gitattributes`, `.gitignore`, and `LICENSE`, while preserving the existing Python, shell, and Dockerfile LF rules.
+- Result: Git now reports explicit `text eol=lf` attributes for the current tracked text file mix, improving cross-platform stability for normal editing workflows.
+- Scope guard: no exporter code, API behavior, payload semantics, Home Assistant access logic, or version files changed.
+- Note: no `.editorconfig` was added because `.gitattributes` is sufficient for tracked-file normalization, and no repository-wide content renormalization was performed because tracked files were already indexed as LF.
+
 ## Version 0.0.10
 - Goal: introduce the first minimal Entity Context slice without changing the read-only architecture or category semantics.
 - Key changes: add compact `entities.items` from the existing readable `/states` snapshot, sorted by `entity_id` and capped at 50 entries.
