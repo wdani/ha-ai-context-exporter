@@ -1,5 +1,11 @@
 # AI Change History
 
+## 2026-04-18 - Areas / Devices fallback investigation
+- Goal: check whether a tiny, safe Areas / Devices fallback can be added after `0.0.8` without changing the GET-only architecture.
+- Finding: no alternate GET-compatible Areas / Devices path is currently validated inside the existing backend model.
+- Result: no speculative fallback code, no transport change, no relationship inference, and no version bump; `0.0.8` remains the current application version.
+- Next focus: continue Discovery Quality with dashboard robustness, unless a real HA test later validates a concrete GET-compatible Areas / Devices path.
+
 ## Version 0.0.8
 - Goal: improve Areas / Devices discovery robustness without architecture changes.
 - Key changes: count readable `/areas` and `/devices` payloads when they are direct lists or small explicit wrappers (`areas`, `devices`, `data`, `items`, `result`).
