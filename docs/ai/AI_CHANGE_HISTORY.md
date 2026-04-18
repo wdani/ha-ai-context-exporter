@@ -1,5 +1,11 @@
 # AI Change History
 
+## Version 0.0.9
+- Goal: improve dashboard discovery robustness without architecture changes.
+- Key changes: count readable `/lovelace/dashboards` payloads when they are direct lists or small explicit wrappers, read `/lovelace/config` when the real config object is directly returned or wrapped under `config`, `data`, or `result` with a clear `views` list, and keep request logging token-safe by logging normalized local paths.
+- Result: `dashboard` keeps compact and honest available/partial/unavailable semantics while tolerating harmless response-shape differences on the already used GET endpoints.
+- Next focus: continue Discovery Quality with additional small, validated robustness improvements only where they fit the current read-only architecture.
+
 ## Version 0.0.8
 - Goal: improve Areas / Devices discovery robustness without architecture changes.
 - Key changes: count readable `/areas` and `/devices` payloads when they are direct lists or small explicit wrappers (`areas`, `devices`, `data`, `items`, `result`).

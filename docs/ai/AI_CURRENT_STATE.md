@@ -1,7 +1,7 @@
 # AI Current State
 
 ## Current version
-`0.0.8`
+`0.0.9`
 
 ## Export status currently observed
 - `system = partial`
@@ -18,3 +18,4 @@
 - Areas/devices discovery kann je nach Proxy-Lesbarkeit unvollständig sein.
 - Areas/devices discovery now also tolerates direct list wrappers such as `areas`, `devices`, `data`, `items`, and `result`; no inferred relationships are exported.
 - Dashboard metadata kann je nach Endpoint-Lesbarkeit begrenzt sein.
+- Dashboard discovery now tolerates small explicit wrappers for the existing `/lovelace/dashboards` and `/lovelace/config` GET payloads; output remains compact counts only with no entity extraction or relationship logic.
