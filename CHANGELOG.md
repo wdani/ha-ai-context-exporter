@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.8 - 2026-04-18
+
+### Changed
+- Improve Areas / Devices discovery robustness by counting direct list payloads and small explicit wrappers from readable `/areas` and `/devices` responses.
+- Preserve compact `areas_devices` export semantics: `available` when both counts are readable, `partial` when only one count is readable, and honest unavailable/unauthorized reasons otherwise.
+- Keep discovery strictly read-only with local GET requests only and no relationship, entity-context, dashboard, integration, auth, or UI changes.
+- Bump version from `0.0.7` to `0.0.8`.
 ## 0.0.7 - 2026-04-18 (docs)
 
 ### Docs
