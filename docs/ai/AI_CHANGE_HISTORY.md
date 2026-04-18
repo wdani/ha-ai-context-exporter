@@ -1,5 +1,12 @@
 # AI Change History
 
+## 2026-04-18 - Dashboard GET path investigation
+- Goal: check whether one small additional dashboard GET path can improve dashboard reachability/readability after the `0.0.9` wrapper-tolerance step.
+- Finding: no additional dashboard-specific REST GET path could be validated inside the existing local Core Proxy architecture; richer Home Assistant panel/dashboard access is exposed through WebSocket commands or frontend HTML, which are outside this task.
+- Result: no speculative dashboard probe, no code fallback, no transport change, and no version bump; `0.0.9` remains the current application version.
+- Cleanup: removed obsolete `docs/startvorlage für neuen chat-md` because the active official guidance is now in `docs/ai/AI_STANDARD_STARTPROMPT.md` and `docs/ai/AI_NEW_CHAT_AND_CODEX_GUIDE.md`.
+- Next focus: continue Discovery Quality only with validated GET-compatible improvements, or explicitly plan a separate transport-alignment task before any WebSocket-based dashboard work.
+
 ## Version 0.0.9
 - Goal: improve dashboard discovery robustness without architecture changes.
 - Key changes: count readable `/lovelace/dashboards` payloads when they are direct lists or small explicit wrappers, read `/lovelace/config` when the real config object is directly returned or wrapped under `config`, `data`, or `result` with a clear `views` list, and keep request logging token-safe by logging normalized local paths.
