@@ -7,6 +7,8 @@ Guide AI-assisted contributions with stable context, architecture rules, and wor
 1. `docs/ai/AI_PROJECT_CONTEXT.md`
 2. `docs/ai/AI_ARCHITECTURE.md`
 3. `docs/ai/AI_CURRENT_STATE.md`
+4. `docs/ai/AI_NEW_CHAT_AND_CODEX_GUIDE.md`
+5. `docs/ai/AI_STANDARD_STARTPROMPT.md`
 
 ## Prompting
 Use:

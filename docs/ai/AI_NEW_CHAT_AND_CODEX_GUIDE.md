@@ -142,6 +142,8 @@ Wichtige Projektdokumente:
 - `docs/ai/AI_CURRENT_STATE.md`
 - `docs/ai/AI_DEVELOPMENT_TREE.md`
 - `docs/ai/AI_CHANGE_HISTORY.md`
+- `docs/ai/AI_NEW_CHAT_AND_CODEX_GUIDE.md`
+- `docs/ai/AI_STANDARD_STARTPROMPT.md`
 - `docs/ai/AI_PROMPT_TEMPLATE.md`
 - `docs/ai/AI_CONTRIBUTOR_GUIDE.md`
 - `docs/development/AI_WORKFLOW.md`
@@ -303,7 +305,7 @@ Aktuelle Grundidee:
 Wichtig:
 Die **Single Source of Truth** für die Version ist:
 
-`rootfs/app/version.py`
+`ha_ai_context_exporter/rootfs/app/version.py`
 
 Regeln:
 
