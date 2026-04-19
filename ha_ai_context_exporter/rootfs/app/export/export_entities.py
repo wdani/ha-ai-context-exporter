@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-ENTITY_ITEMS_LIMIT = 50
 IMPORTANT_ATTRIBUTE_KEYS = (
     "device_class",
     "entity_category",
@@ -62,7 +61,7 @@ def build_compact_entity_items(states_payload: list) -> list[dict]:
 
         items.append(item)
 
-    return sorted(items, key=lambda item: item["entity_id"])[:ENTITY_ITEMS_LIMIT]
+    return sorted(items, key=lambda item: item["entity_id"])
 
 
 def build_entities_preview(structure_preview: dict, domain_preview: dict) -> dict:
