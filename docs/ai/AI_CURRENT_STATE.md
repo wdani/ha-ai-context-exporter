@@ -1,7 +1,7 @@
 # AI Current State
 
 ## Current version
-`0.0.21`
+`0.0.22`
 
 ## Current ingress UI stance
 - The add-on currently remains an ingress-based Home Assistant add-on.
@@ -35,6 +35,7 @@
 - Compact `state` and plain-string `friendly_name` redact literal IPv4 address values as `[redacted_ipv4]` after a targeted real-export sensitive-values check found local network address literals in those already exported compact fields.
 - Compact entity masking is now best-effort and enabled by default unless the add-on option `allow_sensitive_values` is explicitly set to boolean `true`; missing or invalid option values keep masking enabled.
 - Current compact masking also covers the latest evidenced follow-up categories: underscored and hyphenated IPv4-like fragments, MAC-like identifiers, SSID/Wi-Fi context states, geocoded/address context states, person-derived tokens from `person` entities, and the optional direct string `last_changed` / `last_updated` compact fields. Sorting still uses the original logical `entity_id` before output masking.
+- When compact masking is active, masked `entities.items` output `entity_id` values are kept deterministic and unique if masking collapses multiple original entity IDs to the same masked value. The first masked `entity_id` remains unchanged, and later colliding items in original logical `entity_id` sort order get stable `__masked_collision_N` suffixes. This fixes masked output `entity_id` collisions only and does not add `original_entity_id` or any reverse-lookup field.
 - Plain MAC-like masking is narrowed for numeric measurement `state` values with measurement hints, so legitimate numeric sensor states are not accidentally corrupted.
 - The export `warnings` list and existing export UI surface include a concise best-effort masking notice. The export UI shows the current active privacy masking mode in a persistent calmer source-of-truth block with a small mode badge, points users to the Home Assistant add-on configuration option `allow_sensitive_values`, polls `/api/info` for refreshed status, and shows restart/reconnecting plus reachable-again lifecycle messages in a more prominent separate temporary banner above the active-mode block. When the add-on becomes reachable again after a reconnect, the transition banner confirms the now-active mode, can contrast the last confirmed mode with the updated mode using frontend runtime memory only, and remains visible for an explicit 15-second dwell before the next successful `/api/info` refresh can return to normal steady state. Users must still manually review exports before sharing them; this is not complete anonymization.
 - `entities.items` can now include the second small `important_attributes` refinement, derived only from readable `/states.attributes` string values for `device_class`, `entity_category`, `state_class`, and `unit_of_measurement`.

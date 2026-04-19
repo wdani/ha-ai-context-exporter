@@ -292,6 +292,46 @@ def _mask_compact_entity_item(item: dict, person_mask_context: dict) -> dict:
     return masked_item
 
 
+def _deduplicate_masked_entity_ids(items: list[dict]) -> list[dict]:
+    """Keep masked compact entity IDs deterministic and unique."""
+    seen_counts: dict[str, int] = {}
+    used_entity_ids: set[str] = set()
+    reserved_entity_ids = {
+        item["entity_id"]
+        for item in items
+        if isinstance(item.get("entity_id"), str)
+    }
+    unique_items: list[dict] = []
+
+    for item in items:
+        entity_id = item.get("entity_id")
+        if not isinstance(entity_id, str):
+            unique_items.append(item)
+            continue
+
+        seen_counts[entity_id] = seen_counts.get(entity_id, 0) + 1
+        if seen_counts[entity_id] == 1:
+            used_entity_ids.add(entity_id)
+            unique_items.append(item)
+            continue
+
+        suffix_number = seen_counts[entity_id]
+        deduplicated_entity_id = f"{entity_id}__masked_collision_{suffix_number}"
+        while (
+            deduplicated_entity_id in reserved_entity_ids
+            or deduplicated_entity_id in used_entity_ids
+        ):
+            suffix_number += 1
+            deduplicated_entity_id = f"{entity_id}__masked_collision_{suffix_number}"
+
+        unique_item = dict(item)
+        unique_item["entity_id"] = deduplicated_entity_id
+        used_entity_ids.add(deduplicated_entity_id)
+        unique_items.append(unique_item)
+
+    return unique_items
+
+
 def build_compact_entity_items(
     states_payload: list,
     *,
@@ -345,9 +385,10 @@ def build_compact_entity_items(
     if allow_sensitive_values:
         return sorted_items
 
-    return [
+    masked_items = [
         _mask_compact_entity_item(item, person_mask_context) for item in sorted_items
     ]
+    return _deduplicate_masked_entity_ids(masked_items)
 
 
 def build_entities_preview(structure_preview: dict, domain_preview: dict) -> dict:

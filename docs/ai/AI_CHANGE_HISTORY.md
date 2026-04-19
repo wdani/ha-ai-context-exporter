@@ -1,5 +1,13 @@
 # AI Change History
 
+## Version 0.0.22
+- Goal: correct a compact export quality issue where current masking could collapse multiple different original entity IDs into the same masked `entities.items` output `entity_id`.
+- Key changes: after compact items are built from readable `/states`, sorted by original logical `entity_id`, and masked, masked output `entity_id` collisions are resolved deterministically by suffixing only later colliding items.
+- Collision behavior: the first masked `entity_id` remains unchanged; later colliding items in sorted order use the stable `__masked_collision_N` suffix pattern, such as `device_tracker.pc_redacted_ipv4__masked_collision_2`.
+- Preservation: existing compact fields, `important_attributes` whitelist behavior, optional `last_changed` / `last_updated` inclusion rules, malformed-entry skipping, original logical sorting before masking, and current best-effort masking semantics remain unchanged.
+- Opt-out behavior: `allow_sensitive_values=true` still returns raw compact values and does not run masked-collision suffixing.
+- Scope guard: this fixes masked output `entity_id` collisions only; it still does not add `raw_attributes`, device/area/integration context, relationship modeling, `original_entity_id`, reverse lookup fields, UI/container work, WebSocket, service calls, or POST/PUT/PATCH/DELETE behavior.
+
 ## Version 0.0.21
 - Goal: add the next small direct `/states`-based Entity Context refinement by exposing readable compact entity timestamps.
 - Key changes: compact `entities.items` now includes optional `last_changed` and `last_updated` fields when those values are directly present as strings in the existing `/states` payload.
