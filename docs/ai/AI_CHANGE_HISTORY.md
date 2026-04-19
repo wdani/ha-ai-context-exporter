@@ -1,5 +1,11 @@
 # AI Change History
 
+## Version 0.0.17
+- Goal: small UX polish follow-up for the 0.0.16 compact masking status flow after add-on option changes and restarts.
+- Key changes: rewrite the export-page masking status into clearer user-facing language, keep the raw option name secondary, and add lightweight read-only polling of `/api/info` so the page can recover from temporary backend unavailability during restart.
+- Result: the export page now says whether privacy masking is on or off, explains that the setting is changed in the Home Assistant add-on configuration, shows a restart/reconnecting message when the backend is temporarily unavailable, and refreshes status automatically once reachable again.
+- Scope guard: no export payload behavior changes, no writable settings UI, no config mutation endpoint, no Supervisor control logic, no full privacy redesign, no new export sections, no raw attributes, no relationship modeling, no WebSocket, no POST/template fallback, and no service calls.
+
 ## Version 0.0.16
 - Goal: small corrective follow-up for the 0.0.15 configurable compact masking step.
 - Real export confirmation: the latest 0.0.15 export was generated with `allow_sensitive_values=true`, which intentionally allowed raw compact values; using it as evidence showed hyphenated IPv4-like fragments in compact `friendly_name` values and a numeric measurement `state` shape that the current masker would falsely treat as MAC-like.

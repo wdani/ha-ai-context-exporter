@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
 - Document the dashboard GET path investigation: no additional validated Core Proxy REST GET path was found beyond the existing Lovelace probes, so no dashboard fallback code or version bump was added.
 - Remove obsolete `docs/startvorlage für neuen chat-md`; the active official start guidance remains in the AI docs.
 
+## 0.0.17 - 2026-04-19
+
+### Changed
+- Polish the export-page privacy masking status wording so the primary message clearly says whether privacy masking is on or off for compact entity values.
+- Keep `allow_sensitive_values` as a Home Assistant add-on configuration option and show it only as secondary read-only help text in the export page.
+- Add lightweight read-only `/api/info` polling so the export page can refresh masking status after an add-on restart or option-change restart without requiring a stale manual reload.
+- Show a clear restart/reconnecting message while the backend is temporarily unavailable, without attempting to control or suppress Home Assistant Supervisor restart behavior.
+- Keep export payload behavior unchanged and preserve the read-only, GET-only add-on model.
+- Bump both the application version source and Home Assistant add-on metadata from `0.0.16` to `0.0.17`.
+
 ## 0.0.16 - 2026-04-19
 
 ### Fixed

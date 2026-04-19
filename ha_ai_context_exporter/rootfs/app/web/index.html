@@ -17,11 +17,11 @@
         <h2>Export Download</h2>
         <p class="notice">
           Sensitive-value masking is best-effort only. Review exports manually before sharing.
-          If <code>allow_sensitive_values</code> is enabled, raw compact values may be exported at your own risk;
-          please open an issue for missed sensitive values.
+          When privacy masking is turned off in the Home Assistant add-on configuration, raw compact values may be exported at your own risk.
+          Please open an issue for missed sensitive values.
         </p>
         <p id="sensitive-masking-info" role="status" aria-live="polite">
-          Loading compact masking mode...
+          Loading privacy masking status...
         </p>
         <label for="export-mode">Mode</label>
         <select id="export-mode">
@@ -82,6 +82,10 @@
     </main>
 
     <script>
+      const MASKING_STATUS_REFRESH_MS = 15000;
+      const RECONNECT_REFRESH_MS = 3000;
+      let maskingStatusRefreshTimer = null;
+
       function getAddonBaseUrl() {
         const basePath = window.location.pathname.endsWith("/")
           ? window.location.pathname
@@ -240,17 +244,29 @@
         }
       }
 
+      function scheduleSensitiveMaskingInfoRefresh(delayMs) {
+        if (maskingStatusRefreshTimer !== null) {
+          window.clearTimeout(maskingStatusRefreshTimer);
+        }
+        maskingStatusRefreshTimer = window.setTimeout(loadSensitiveMaskingInfo, delayMs);
+      }
+
       async function loadSensitiveMaskingInfo() {
         const target = document.getElementById("sensitive-masking-info");
         try {
           const data = await fetchAddonJson("api/info");
           const rawAllowed = data.allow_sensitive_values === true;
-          const mode = rawAllowed
-            ? "raw compact sensitive values allowed"
-            : "compact masking enabled";
-          target.textContent = `Current compact masking mode: ${mode}. Change this in the Home Assistant add-on configuration option allow_sensitive_values.`;
+          const primary = rawAllowed
+            ? "Privacy masking is off for compact entity values."
+            : "Privacy masking is on for compact entity values.";
+          const detail = rawAllowed
+            ? "Exports may include raw names, network details, and device identifiers."
+            : "Some sensitive-looking compact values are hidden before export.";
+          target.textContent = `${primary} ${detail} Change this in the Home Assistant add-on configuration (allow_sensitive_values). Review every export before sharing.`;
+          scheduleSensitiveMaskingInfoRefresh(MASKING_STATUS_REFRESH_MS);
         } catch {
-          target.textContent = "Compact masking mode unavailable. Check the Home Assistant add-on configuration option allow_sensitive_values.";
+          target.textContent = "The add-on is restarting or reconnecting. This page will refresh the privacy masking status automatically when the backend is reachable again.";
+          scheduleSensitiveMaskingInfoRefresh(RECONNECT_REFRESH_MS);
         }
       }
 
