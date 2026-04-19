@@ -1,5 +1,11 @@
 # AI Change History
 
+## Version 0.0.11
+- Goal: add the first small, controlled important-attributes starter step inside the existing compact Entity Context slice.
+- Key changes: add optional `important_attributes` to `entities.items` from readable `/states.attributes`, limited to string values for `device_class`, `state_class`, and `unit_of_measurement`.
+- Result: compact entity items expose a minimal amount of useful attribute context without duplicating `friendly_name`, emitting empty objects, or expanding into raw attributes.
+- Scope guard: no transport changes, no WebSocket, no POST/template fallback, no service calls, no relationship modeling, no dashboard/areas/devices/integrations work, no YAML/file parsing, and no payload-wide expansion.
+
 ## 2026-04-18 - Repository line-ending normalization
 - Goal: reduce false CRLF / line-ending noise on Windows without changing exporter behavior or project architecture.
 - Key changes: expand `.gitattributes` for the tracked text file types currently used by the repository: Markdown, YAML, HTML, CSS, `.gitattributes`, `.gitignore`, and `LICENSE`, while preserving the existing Python, shell, and Dockerfile LF rules.

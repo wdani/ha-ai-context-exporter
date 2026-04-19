@@ -3,6 +3,23 @@
 from __future__ import annotations
 
 ENTITY_ITEMS_LIMIT = 50
+IMPORTANT_ATTRIBUTE_KEYS = (
+    "device_class",
+    "state_class",
+    "unit_of_measurement",
+)
+
+
+def _extract_important_attributes(attributes: object) -> dict:
+    if not isinstance(attributes, dict):
+        return {}
+
+    important_attributes: dict[str, str] = {}
+    for key in IMPORTANT_ATTRIBUTE_KEYS:
+        value = attributes.get(key)
+        if isinstance(value, str):
+            important_attributes[key] = value
+    return important_attributes
 
 
 def build_compact_entity_items(states_payload: list) -> list[dict]:
@@ -32,14 +49,17 @@ def build_compact_entity_items(states_payload: list) -> list[dict]:
             if isinstance(raw_friendly_name, str):
                 friendly_name = raw_friendly_name
 
-        items.append(
-            {
-                "entity_id": entity_id,
-                "domain": domain,
-                "state": state,
-                "friendly_name": friendly_name,
-            }
-        )
+        item = {
+            "entity_id": entity_id,
+            "domain": domain,
+            "state": state,
+            "friendly_name": friendly_name,
+        }
+        important_attributes = _extract_important_attributes(attributes)
+        if important_attributes:
+            item["important_attributes"] = important_attributes
+
+        items.append(item)
 
     return sorted(items, key=lambda item: item["entity_id"])[:ENTITY_ITEMS_LIMIT]
 
