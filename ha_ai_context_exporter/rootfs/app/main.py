@@ -44,7 +44,16 @@ APP_INFO = {
 
 def get_app_info() -> dict:
     """Return basic app metadata for reuse in other endpoints."""
-    return dict(APP_INFO)
+    info = dict(APP_INFO)
+    raw_sensitive_values_allowed = allow_sensitive_values()
+    info["allow_sensitive_values"] = raw_sensitive_values_allowed
+    info["compact_sensitive_masking"] = (
+        "disabled" if raw_sensitive_values_allowed else "enabled"
+    )
+    info["sensitive_values_option_source"] = (
+        "Home Assistant add-on configuration option allow_sensitive_values"
+    )
+    return info
 
 
 def load_addon_options() -> dict:
