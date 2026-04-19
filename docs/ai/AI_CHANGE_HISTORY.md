@@ -1,5 +1,13 @@
 # AI Change History
 
+## Version 0.0.21
+- Goal: add the next small direct `/states`-based Entity Context refinement by exposing readable compact entity timestamps.
+- Key changes: compact `entities.items` now includes optional `last_changed` and `last_updated` fields when those values are directly present as strings in the existing `/states` payload.
+- Omission behavior: missing or non-string `last_changed` / `last_updated` values are omitted from the item, with no placeholder text and no derived fallback timestamp.
+- Preservation: existing compact fields (`entity_id`, derived `domain`, `state`, `friendly_name`), stable sorting by the original logical `entity_id`, malformed-entry skipping, and the current `important_attributes` whitelist remain unchanged.
+- Masking: the existing compact masking pipeline also covers the new string fields unless `allow_sensitive_values` is explicitly `true`; no new privacy system or option semantics were introduced.
+- Scope guard: still no `raw_attributes`, no relationship modeling, no device/area/integration context, no UI/container migration, no WebSocket, no service calls, and no POST/PUT/PATCH/DELETE behavior.
+
 ## 2026-04-19 - Ingress UI container architecture clarification
 - Goal: document the current and future role of Home Assistant Ingress as the UI container without performing a migration or hidden architecture switch.
 - Finding: Ingress remains appropriate for the current small read-only exporter UI, but recent ingress UX work around active privacy mode, reconnect, and recovered-state visibility is a warning signal that the UI shell should be treated consciously rather than assumed to be the permanent product home.

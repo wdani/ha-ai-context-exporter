@@ -15,6 +15,16 @@ All notable changes to this project will be documented in this file.
 - Document the dashboard GET path investigation: no additional validated Core Proxy REST GET path was found beyond the existing Lovelace probes, so no dashboard fallback code or version bump was added.
 - Remove obsolete `docs/startvorlage für neuen chat-md`; the active official start guidance remains in the AI docs.
 
+## 0.0.21 - 2026-04-19
+
+### Changed
+- Add optional `last_changed` and `last_updated` fields to compact `entities.items`, copied only from direct readable string values in the existing `/states` payload.
+- Omit `last_changed` and `last_updated` cleanly when they are missing or non-string; no placeholder or derived fallback timestamp is emitted.
+- Preserve existing compact entity behavior: original logical `entity_id` sorting, malformed-entry skipping, existing compact fields, and the current string-only `important_attributes` whitelist remain unchanged.
+- Apply the existing compact masking pipeline to the new string fields unless `allow_sensitive_values` is explicitly `true`, without adding a new privacy system or changing opt-out semantics.
+- Keep this as a small direct `/states`-based Entity Context refinement with no `raw_attributes`, no device/area/integration context, no relationship modeling, no UI/container change, no WebSocket, no service calls, and no write-capable Home Assistant operations.
+- Bump both the application version source and Home Assistant add-on metadata from `0.0.20` to `0.0.21`.
+
 ## 0.0.20 - 2026-04-19
 
 ### Changed
