@@ -1,5 +1,12 @@
 # AI Change History
 
+## Version 0.0.14
+- Goal: refresh outdated `important_attributes` validation notes against the real 0.0.13 compact export and perform a first targeted sensitive-values check for compact entity strings.
+- Real export confirmation: compact `entities.items` now includes real `unit_of_measurement` and `state_class` examples; `entity_category` was not present in the attached export, and non-string whitelisted raw values remain unconfirmed because raw attributes are intentionally not exported.
+- Key changes: mask literal IPv4 address values in already exported compact `state` and plain-string `friendly_name` values as `[redacted_ipv4]`.
+- Result: the compact entity export no longer exposes the observed local network address literals in those fields, while item structure, export keys, `entity_id`, stable sorting, and the `important_attributes` whitelist remain unchanged.
+- Scope guard: no architecture change, no transport changes, no WebSocket, no POST/template fallback, no service calls, no raw attributes, no relationship modeling, no broad anonymization redesign, no new export fields, and no export category redesign.
+
 ## Version 0.0.13
 - Goal: remove the artificial 50-item limit from the existing compact `entities.items` export.
 - Key changes: return all eligible compact entity items derived from readable `/states` data after the existing stable `entity_id` sort.
