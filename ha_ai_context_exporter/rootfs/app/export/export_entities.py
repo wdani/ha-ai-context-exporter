@@ -259,7 +259,13 @@ def _extract_important_attributes(attributes: object) -> dict:
 def _mask_compact_entity_item(item: dict, person_mask_context: dict) -> dict:
     masked_item = dict(item)
 
-    for field in ("entity_id", "state", "friendly_name"):
+    for field in (
+        "entity_id",
+        "state",
+        "friendly_name",
+        "last_changed",
+        "last_updated",
+    ):
         value = masked_item.get(field)
         if isinstance(value, str):
             masked_item[field] = _mask_compact_sensitive_value(
@@ -324,6 +330,11 @@ def build_compact_entity_items(
             "state": state,
             "friendly_name": friendly_name,
         }
+        for timestamp_key in ("last_changed", "last_updated"):
+            timestamp_value = entry.get(timestamp_key)
+            if isinstance(timestamp_value, str):
+                item[timestamp_key] = timestamp_value
+
         important_attributes = _extract_important_attributes(attributes)
         if important_attributes:
             item["important_attributes"] = important_attributes

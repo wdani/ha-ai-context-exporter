@@ -1,7 +1,7 @@
 # AI Current State
 
 ## Current version
-`0.0.20`
+`0.0.21`
 
 ## Current ingress UI stance
 - The add-on currently remains an ingress-based Home Assistant add-on.
@@ -31,12 +31,13 @@
 - Current observed export examples may show `environment.config_path = false`; this does not block the current `/states`-only Entity Context slice, but it must be rechecked before starting any File / YAML Context work.
 - The `entities` category includes the first compact Entity Context slice as `items` when `/states` is readable.
 - `entities.items` contains the full eligible compact entity list derived from readable `/states` data, sorted by `entity_id`, and keeps the stable compact fields `entity_id`, derived `domain`, direct `state`, and direct plain-string `attributes.friendly_name` (or `null`).
+- `entities.items` can include optional direct `/states` string timestamp fields `last_changed` and `last_updated`; missing or non-string timestamp values are omitted with no placeholder or derived fallback.
 - Compact `state` and plain-string `friendly_name` redact literal IPv4 address values as `[redacted_ipv4]` after a targeted real-export sensitive-values check found local network address literals in those already exported compact fields.
 - Compact entity masking is now best-effort and enabled by default unless the add-on option `allow_sensitive_values` is explicitly set to boolean `true`; missing or invalid option values keep masking enabled.
-- Current compact masking also covers the latest evidenced follow-up categories: underscored and hyphenated IPv4-like fragments, MAC-like identifiers, SSID/Wi-Fi context states, geocoded/address context states, and person-derived tokens from `person` entities. Sorting still uses the original logical `entity_id` before output masking.
+- Current compact masking also covers the latest evidenced follow-up categories: underscored and hyphenated IPv4-like fragments, MAC-like identifiers, SSID/Wi-Fi context states, geocoded/address context states, person-derived tokens from `person` entities, and the optional direct string `last_changed` / `last_updated` compact fields. Sorting still uses the original logical `entity_id` before output masking.
 - Plain MAC-like masking is narrowed for numeric measurement `state` values with measurement hints, so legitimate numeric sensor states are not accidentally corrupted.
 - The export `warnings` list and existing export UI surface include a concise best-effort masking notice. The export UI shows the current active privacy masking mode in a persistent calmer source-of-truth block with a small mode badge, points users to the Home Assistant add-on configuration option `allow_sensitive_values`, polls `/api/info` for refreshed status, and shows restart/reconnecting plus reachable-again lifecycle messages in a more prominent separate temporary banner above the active-mode block. When the add-on becomes reachable again after a reconnect, the transition banner confirms the now-active mode, can contrast the last confirmed mode with the updated mode using frontend runtime memory only, and remains visible for an explicit 15-second dwell before the next successful `/api/info` refresh can return to normal steady state. Users must still manually review exports before sharing them; this is not complete anonymization.
 - `entities.items` can now include the second small `important_attributes` refinement, derived only from readable `/states.attributes` string values for `device_class`, `entity_category`, `state_class`, and `unit_of_measurement`.
 - `important_attributes` is omitted when none of the small whitelisted keys are present as strings; empty `important_attributes` objects are not emitted.
 - Current real 0.0.13 export observation confirms the basic `important_attributes` starter presence/omission pattern and real compact-item examples for `device_class`, `state_class`, and `unit_of_measurement`. The same export did not show `entity_category`; focused local helper validation covers that one-key refinement. Non-string whitelisted raw values being omitted remain pending because the compact export intentionally does not include raw attributes.
-- Entity Context does not yet include `raw_attributes`, broad/domain-specific important attributes, area/device/integration relationships, aliases, semantic inference, dashboard links, or YAML/file context.
+- Entity Context still does not include `raw_attributes`, broad/domain-specific important attributes, area/device/integration context, relationship modeling, aliases, semantic inference, dashboard links, or YAML/file context.
