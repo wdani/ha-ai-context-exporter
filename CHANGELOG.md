@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 - Document the dashboard GET path investigation: no additional validated Core Proxy REST GET path was found beyond the existing Lovelace probes, so no dashboard fallback code or version bump was added.
 - Remove obsolete `docs/startvorlage für neuen chat-md`; the active official start guidance remains in the AI docs.
 
+## 0.0.13 - 2026-04-19
+
+### Changed
+- Remove the artificial 50-item cap from compact `entities.items`; all eligible compact items from readable `/states` data are now returned after the existing stable `entity_id` sort.
+- Keep the compact entity item shape unchanged: `entity_id`, derived `domain`, direct `state`, direct plain-string `friendly_name`, and optional whitelisted string-only `important_attributes`.
+- Keep the export read-only and GET-only with no `raw_attributes`, no relationship modeling, no dashboard/areas/devices/integrations changes, no YAML/file parsing, and no payload schema redesign.
+- Bump version from `0.0.12` to `0.0.13`.
+
 ## 0.0.12 - 2026-04-19
 
 ### Changed

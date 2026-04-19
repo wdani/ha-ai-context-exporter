@@ -1,7 +1,7 @@
 # AI Current State
 
 ## Current version
-`0.0.12`
+`0.0.13`
 
 ## Export status currently observed
 - `system = partial`
@@ -23,9 +23,8 @@
 - A follow-up dashboard GET path investigation found no additional validated Core Proxy REST GET path beyond the existing Lovelace probes. If those existing endpoints are unreachable in a real HA environment, the dashboard category remains honestly unavailable instead of using speculative WebSocket, frontend HTML, POST/template, or file-parsing fallbacks.
 - Current observed export examples may show `environment.config_path = false`; this does not block the current `/states`-only Entity Context slice, but it must be rechecked before starting any File / YAML Context work.
 - The `entities` category includes the first compact Entity Context slice as `items` when `/states` is readable.
-- `entities.items` is intentionally capped at 50 entries, sorted by `entity_id`, and keeps the stable compact fields `entity_id`, derived `domain`, direct `state`, and direct plain-string `attributes.friendly_name` (or `null`).
+- `entities.items` contains the full eligible compact entity list derived from readable `/states` data, sorted by `entity_id`, and keeps the stable compact fields `entity_id`, derived `domain`, direct `state`, and direct plain-string `attributes.friendly_name` (or `null`).
 - `entities.items` can now include the second small `important_attributes` refinement, derived only from readable `/states.attributes` string values for `device_class`, `entity_category`, `state_class`, and `unit_of_measurement`.
 - `important_attributes` is omitted when none of the small whitelisted keys are present as strings; empty `important_attributes` objects are not emitted.
 - Current real export observation confirms the basic `important_attributes` starter presence/omission pattern and visible `device_class` examples. Focused local helper validation now covers the one-key `entity_category` refinement. This is not a blocker for the current slice, but real-world examples for `unit_of_measurement`, `state_class`, and non-string whitelisted values being omitted remain pending for later validation on a suitable user system or through community-provided example exports/test cases.
-- The 50-item cap is a temporary first-slice limitation and must be reevaluated when the project moves beyond compact Entity Context or introduces stronger mode-specific entity depth.
 - Entity Context does not yet include `raw_attributes`, broad/domain-specific important attributes, area/device/integration relationships, aliases, semantic inference, dashboard links, or YAML/file context.

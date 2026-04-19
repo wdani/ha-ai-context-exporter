@@ -1,5 +1,11 @@
 # AI Change History
 
+## Version 0.0.13
+- Goal: remove the artificial 50-item limit from the existing compact `entities.items` export.
+- Key changes: return all eligible compact entity items derived from readable `/states` data after the existing stable `entity_id` sort.
+- Result: compact entity items are no longer truncated to the first 50 entries; the item shape and `important_attributes` whitelist behavior remain unchanged.
+- Scope guard: no transport changes, no WebSocket, no POST/template fallback, no service calls, no raw attributes, no relationship modeling, no dashboard/areas/devices/integrations work, no YAML/file parsing, and no export schema redesign.
+
 ## Version 0.0.12
 - Goal: add the second small, controlled important-attributes refinement inside the existing compact Entity Context slice.
 - Key changes: extend the tiny string-only `important_attributes` whitelist with `entity_category`.
