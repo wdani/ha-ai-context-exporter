@@ -12,6 +12,15 @@ All notable changes to this project will be documented in this file.
 - Document the dashboard GET path investigation: no additional validated Core Proxy REST GET path was found beyond the existing Lovelace probes, so no dashboard fallback code or version bump was added.
 - Remove obsolete `docs/startvorlage für neuen chat-md`; the active official start guidance remains in the AI docs.
 
+## 0.0.18 - 2026-04-19
+
+### Changed
+- Refine the ingress privacy masking status into an explicit visible lifecycle: current active mode, restarting/reconnecting, and reachable again with the updated mode now active.
+- Keep the existing read-only `/api/info` polling and add only frontend state handling plus lightweight status-line styling so the post-reconnect state is visibly distinct from normal steady state.
+- Clarify that temporary unavailability can happen after a Home Assistant add-on configuration change, while users still change `allow_sensitive_values` only in the Home Assistant add-on configuration.
+- Keep the backend API payload unchanged and preserve the read-only, GET-only add-on model with no writable settings UI, Supervisor restart control, service calls, WebSocket access, or mutation endpoint.
+- Bump both the application version source and Home Assistant add-on metadata from `0.0.17` to `0.0.18`.
+
 ## 0.0.17 - 2026-04-19
 
 ### Changed
