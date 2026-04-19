@@ -1,5 +1,11 @@
 # AI Change History
 
+## Version 0.0.12
+- Goal: add the second small, controlled important-attributes refinement inside the existing compact Entity Context slice.
+- Key changes: extend the tiny string-only `important_attributes` whitelist with `entity_category`.
+- Result: compact entity items can now expose Home Assistant entity category context when `/states.attributes.entity_category` is present as a string, while missing, non-string, or otherwise unwhitelisted values remain omitted.
+- Scope guard: no transport changes, no WebSocket, no POST/template fallback, no service calls, no raw attributes, no relationship modeling, no dashboard/areas/devices/integrations work, no YAML/file parsing, and no payload-wide expansion.
+
 ## Version 0.0.11
 - Goal: add the first small, controlled important-attributes starter step inside the existing compact Entity Context slice.
 - Key changes: add optional `important_attributes` to `entities.items` from readable `/states.attributes`, limited to string values for `device_class`, `state_class`, and `unit_of_measurement`.
