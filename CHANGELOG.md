@@ -12,6 +12,15 @@ All notable changes to this project will be documented in this file.
 - Document the dashboard GET path investigation: no additional validated Core Proxy REST GET path was found beyond the existing Lovelace probes, so no dashboard fallback code or version bump was added.
 - Remove obsolete `docs/startvorlage für neuen chat-md`; the active official start guidance remains in the AI docs.
 
+## 0.0.11 - 2026-04-19
+
+### Changed
+- Add the first minimal `important_attributes` starter slice to compact `entities.items`, derived only from readable `/states.attributes` data.
+- Whitelist only string values for `device_class`, `state_class`, and `unit_of_measurement`; omit `important_attributes` entirely when none of those keys are present as strings.
+- Keep existing compact entity fields unchanged: `entity_id`, derived `domain`, direct `state`, and direct plain-string `friendly_name`.
+- Keep the export read-only and GET-only with no `raw_attributes`, no relationship modeling, no dashboard/areas/devices/integrations changes, no YAML/file parsing, and no payload-wide expansion.
+- Bump version from `0.0.10` to `0.0.11`.
+
 ## 0.0.10 - 2026-04-18
 
 ### Changed
@@ -111,4 +120,3 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - Fix Home Assistant add-on schema/options compatibility by removing the default value for optional `ha_token` (`options: {}` with `schema: ha_token: "password?"`).
 - Bump development version from `0.0.2` to `0.0.3`.
-
