@@ -12,6 +12,18 @@ All notable changes to this project will be documented in this file.
 - Document the dashboard GET path investigation: no additional validated Core Proxy REST GET path was found beyond the existing Lovelace probes, so no dashboard fallback code or version bump was added.
 - Remove obsolete `docs/startvorlage für neuen chat-md`; the active official start guidance remains in the AI docs.
 
+## 0.0.14 - 2026-04-19
+
+### Changed
+- Mask literal IPv4 address values in compact `entities.items` `state` and plain-string `friendly_name` values as `[redacted_ipv4]`, based on the first targeted sensitive-values check of a real 0.0.13 compact export.
+- Keep compact entity item structure unchanged: no new fields, no renamed keys, no `raw_attributes`, no relationship modeling, and no export category redesign.
+- Keep `entity_id`, derived `domain`, sorting by `entity_id`, and the string-only `important_attributes` whitelist unchanged.
+- Bump the application version source from `0.0.13` to `0.0.14`.
+
+### Docs
+- Refresh AI validation notes to state that real compact `unit_of_measurement` and `state_class` examples are now confirmed.
+- Keep validation notes open for `entity_category` real-export evidence and non-string whitelisted raw values, because the attached export did not confirm those cases.
+
 ## 0.0.13 - 2026-04-19
 
 ### Changed

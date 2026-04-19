@@ -1,7 +1,7 @@
 # AI Current State
 
 ## Current version
-`0.0.13`
+`0.0.14`
 
 ## Export status currently observed
 - `system = partial`
@@ -24,7 +24,8 @@
 - Current observed export examples may show `environment.config_path = false`; this does not block the current `/states`-only Entity Context slice, but it must be rechecked before starting any File / YAML Context work.
 - The `entities` category includes the first compact Entity Context slice as `items` when `/states` is readable.
 - `entities.items` contains the full eligible compact entity list derived from readable `/states` data, sorted by `entity_id`, and keeps the stable compact fields `entity_id`, derived `domain`, direct `state`, and direct plain-string `attributes.friendly_name` (or `null`).
+- Compact `state` and plain-string `friendly_name` now redact literal IPv4 address values as `[redacted_ipv4]` after a targeted real-export sensitive-values check found local network address literals in those already exported compact fields.
 - `entities.items` can now include the second small `important_attributes` refinement, derived only from readable `/states.attributes` string values for `device_class`, `entity_category`, `state_class`, and `unit_of_measurement`.
 - `important_attributes` is omitted when none of the small whitelisted keys are present as strings; empty `important_attributes` objects are not emitted.
-- Current real export observation confirms the basic `important_attributes` starter presence/omission pattern and visible `device_class` examples. Focused local helper validation now covers the one-key `entity_category` refinement. This is not a blocker for the current slice, but real-world examples for `unit_of_measurement`, `state_class`, and non-string whitelisted values being omitted remain pending for later validation on a suitable user system or through community-provided example exports/test cases.
+- Current real 0.0.13 export observation confirms the basic `important_attributes` starter presence/omission pattern and real compact-item examples for `device_class`, `state_class`, and `unit_of_measurement`. The same export did not show `entity_category`; focused local helper validation covers that one-key refinement. Non-string whitelisted raw values being omitted remain pending because the compact export intentionally does not include raw attributes.
 - Entity Context does not yet include `raw_attributes`, broad/domain-specific important attributes, area/device/integration relationships, aliases, semantic inference, dashboard links, or YAML/file context.

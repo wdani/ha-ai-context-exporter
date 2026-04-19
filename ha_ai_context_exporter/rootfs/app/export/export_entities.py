@@ -2,12 +2,25 @@
 
 from __future__ import annotations
 
+import re
+
 IMPORTANT_ATTRIBUTE_KEYS = (
     "device_class",
     "entity_category",
     "state_class",
     "unit_of_measurement",
 )
+
+_IPV4_ADDRESS_PATTERN = re.compile(
+    r"(?<!\d)"
+    r"(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}"
+    r"(?:25[0-5]|2[0-4]\d|1?\d?\d)"
+    r"(?!\d)"
+)
+
+
+def _mask_compact_sensitive_value(value: str) -> str:
+    return _IPV4_ADDRESS_PATTERN.sub("[redacted_ipv4]", value)
 
 
 def _extract_important_attributes(attributes: object) -> dict:
@@ -41,13 +54,14 @@ def build_compact_entity_items(states_payload: list) -> list[dict]:
         state = entry.get("state")
         if not isinstance(state, str):
             continue
+        state = _mask_compact_sensitive_value(state)
 
         attributes = entry.get("attributes")
         friendly_name = None
         if isinstance(attributes, dict):
             raw_friendly_name = attributes.get("friendly_name")
             if isinstance(raw_friendly_name, str):
-                friendly_name = raw_friendly_name
+                friendly_name = _mask_compact_sensitive_value(raw_friendly_name)
 
         item = {
             "entity_id": entity_id,
