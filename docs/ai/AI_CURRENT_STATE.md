@@ -3,6 +3,13 @@
 ## Current version
 `0.0.20`
 
+## Current ingress UI stance
+- The add-on currently remains an ingress-based Home Assistant add-on.
+- Recent 0.0.17-0.0.20 work improved active privacy-mode visibility, reconnect messaging, and recovered-state clarity inside the existing ingress page.
+- The repo evidence points to both normal frontend/UX implementation friction and real container/lifecycle limits: the page can explain option-change restarts and poll `/api/info`, but it cannot own Home Assistant Supervisor restart behavior or stay reachable while the backend container restarts.
+- Current recommendation: keep Ingress for now as a bounded tactical UI shell, not as an assumed long-term product UX home.
+- No migration is currently planned. Any custom panel, second UI container, external frontend, iframe strategy, WebSocket transport, or backend redesign would need a separate architecture task.
+
 ## Export status currently observed
 - `system = partial`
 - `entities = available`
