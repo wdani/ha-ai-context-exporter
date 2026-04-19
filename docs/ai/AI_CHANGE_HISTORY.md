@@ -1,5 +1,12 @@
 # AI Change History
 
+## Version 0.0.18
+- Goal: small follow-up for the ingress restart/reconnect masking-status UX after the 0.0.17 polling step.
+- Pre-check finding: the repo already had the current masking mode, read-only `/api/info` polling, and a visible reconnecting message while the backend is unavailable.
+- Key changes: add a tiny frontend lifecycle state for stable, reconnecting, and reconnected; after a reconnect, the page now briefly says the add-on is reachable again and that the shown masking mode is active.
+- Result: the restart/reconnect transition no longer silently returns from the reconnecting message to normal steady-state text; the recovered state is visibly distinct and styled in the existing ingress page.
+- Scope guard: no backend status payload change, no writable settings UI, no config mutation endpoint, no Supervisor restart control logic, no export payload behavior change, no WebSocket, no POST/PUT/PATCH/DELETE, and no service calls.
+
 ## Version 0.0.17
 - Goal: small UX polish follow-up for the 0.0.16 compact masking status flow after add-on option changes and restarts.
 - Key changes: rewrite the export-page masking status into clearer user-facing language, keep the raw option name secondary, and add lightweight read-only polling of `/api/info` so the page can recover from temporary backend unavailability during restart.

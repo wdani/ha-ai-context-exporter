@@ -27,6 +27,23 @@ p {
   line-height: 1.45;
 }
 
+#sensitive-masking-info {
+  padding: 0.75rem;
+  border-left: 4px solid #92b6ff;
+  text-align: left;
+  background: rgba(146, 182, 255, 0.12);
+}
+
+#sensitive-masking-info[data-status="reconnecting"] {
+  border-color: #ffd166;
+  background: rgba(255, 209, 102, 0.14);
+}
+
+#sensitive-masking-info[data-status="reconnected"] {
+  border-color: #7ee787;
+  background: rgba(126, 231, 135, 0.14);
+}
+
 button {
   border: 0;
   border-radius: 0.6rem;
