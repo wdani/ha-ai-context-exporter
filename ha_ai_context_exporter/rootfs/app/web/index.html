@@ -21,19 +21,22 @@
           Please open an issue for missed sensitive values.
         </p>
         <div id="sensitive-masking-status" class="masking-status-layout">
+          <div id="sensitive-masking-transition" class="masking-transition-banner" data-status="stable" hidden>
+            <p class="masking-transition-kicker">Update status</p>
+            <p id="sensitive-masking-transition-title" class="masking-transition-title" role="status" aria-live="polite"></p>
+            <p id="sensitive-masking-transition-detail" class="masking-transition-detail"></p>
+          </div>
           <div id="sensitive-masking-active" class="masking-status-block masking-status-block--active" data-mode="unknown">
-            <h3>Active privacy mode</h3>
+            <div class="masking-active-header">
+              <h3>Active privacy mode</h3>
+              <span id="sensitive-masking-active-badge" class="masking-mode-badge" data-mode="unknown">Checking</span>
+            </div>
             <p id="sensitive-masking-active-mode" class="masking-status-title" role="status" aria-live="polite">
               Loading active mode...
             </p>
             <p id="sensitive-masking-active-detail" class="masking-status-detail">
               Reading Home Assistant add-on configuration...
             </p>
-          </div>
-          <div id="sensitive-masking-transition" class="masking-status-block masking-status-block--transition" data-status="stable" hidden>
-            <h3>Update status</h3>
-            <p id="sensitive-masking-transition-title" class="masking-status-title" role="status" aria-live="polite"></p>
-            <p id="sensitive-masking-transition-detail" class="masking-status-detail"></p>
           </div>
         </div>
         <label for="export-mode">Mode</label>
@@ -97,6 +100,7 @@
     <script>
       const MASKING_STATUS_REFRESH_MS = 15000;
       const RECONNECT_REFRESH_MS = 3000;
+      const RECOVERED_STATUS_MIN_DWELL_MS = 15000;
       const MASKING_STATUS_STATES = {
         STABLE: "stable",
         RECONNECTING: "reconnecting",
@@ -287,13 +291,16 @@
 
       function renderSensitiveMaskingActiveMode(rawAllowed, freshness) {
         const block = document.getElementById("sensitive-masking-active");
+        const badge = document.getElementById("sensitive-masking-active-badge");
         const modeTarget = document.getElementById("sensitive-masking-active-mode");
         const detailTarget = document.getElementById("sensitive-masking-active-detail");
 
         if (rawAllowed === null) {
           block.dataset.mode = "unknown";
           block.dataset.freshness = "unknown";
-          modeTarget.textContent = "Active mode not confirmed yet";
+          badge.dataset.mode = "unknown";
+          badge.textContent = "Checking";
+          modeTarget.textContent = "Active mode not confirmed yet.";
           detailTarget.textContent = "Waiting for the first successful read from /api/info.";
           return;
         }
@@ -302,7 +309,11 @@
         const isLastConfirmed = freshness === "last-confirmed";
         block.dataset.mode = rawAllowed ? "off" : "on";
         block.dataset.freshness = freshness;
-        modeTarget.textContent = `${isLastConfirmed ? "Last confirmed mode" : "Current active mode"}: ${copy.label}`;
+        badge.dataset.mode = rawAllowed ? "off" : "on";
+        badge.textContent = rawAllowed ? "Masking off" : "Masking on";
+        modeTarget.textContent = isLastConfirmed
+          ? "Showing the last confirmed active mode."
+          : "Current active mode confirmed from /api/info.";
         detailTarget.textContent = isLastConfirmed
           ? `${copy.detail} The add-on is temporarily unavailable, so this will refresh when /api/info is reachable again.`
           : `${copy.detail} Source: Home Assistant add-on configuration option allow_sensitive_values. Review every export before sharing.`;
@@ -360,7 +371,11 @@
           renderSensitiveMaskingActiveMode(rawAllowed, "current");
           renderSensitiveMaskingTransition(nextState, rawAllowed, previousRawAllowed);
           lastConfirmedSensitiveValuesAllowed = rawAllowed;
-          scheduleSensitiveMaskingInfoRefresh(MASKING_STATUS_REFRESH_MS);
+          scheduleSensitiveMaskingInfoRefresh(
+            nextState === MASKING_STATUS_STATES.RECONNECTED
+              ? RECOVERED_STATUS_MIN_DWELL_MS
+              : MASKING_STATUS_REFRESH_MS,
+          );
         } catch {
           maskingStatusState = MASKING_STATUS_STATES.RECONNECTING;
           renderSensitiveMaskingActiveMode(lastConfirmedSensitiveValuesAllowed, "last-confirmed");
