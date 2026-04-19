@@ -1,5 +1,12 @@
 # AI Change History
 
+## Version 0.0.20
+- Goal: small follow-up correction for the merged 0.0.19 ingress split, focused on stronger visual hierarchy rather than backend behavior.
+- Pre-check finding: the merged baseline already had separate active-mode and transition-status blocks, previous-mode runtime memory, and read-only `/api/info` polling, but the active-mode block still carried strong whole-block mode coloring and the transition block remained a peer surface below it.
+- Key changes: make the active-mode block calmer and badge-based, place the temporary reconnect/recovered lifecycle banner above it, and style that banner as the dominant event signal.
+- Recovered UX: the reachable-again confirmation now has an explicit 15-second dwell before the next successful `/api/info` refresh can hide it, and it still confirms the now-active mode with optional previous-mode contrast from frontend runtime memory only.
+- Scope guard: frontend-only hierarchy and styling change, no backend status payload change, no writable settings UI, no config mutation endpoint, no Supervisor restart control logic, no export payload behavior change, no WebSocket, no POST/PUT/PATCH/DELETE, and no service calls.
+
 ## Version 0.0.19
 - Goal: small follow-up for the ingress masking-status UX after the 0.0.18 reachable-again lifecycle step.
 - Pre-check finding: the merged baseline already had stable, reconnecting, and reconnected frontend states with read-only `/api/info` polling, but those states still rendered through one status paragraph and felt like one box changing text.
