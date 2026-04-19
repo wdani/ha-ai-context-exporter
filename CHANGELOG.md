@@ -15,6 +15,17 @@ All notable changes to this project will be documented in this file.
 - Document the dashboard GET path investigation: no additional validated Core Proxy REST GET path was found beyond the existing Lovelace probes, so no dashboard fallback code or version bump was added.
 - Remove obsolete `docs/startvorlage für neuen chat-md`; the active official start guidance remains in the AI docs.
 
+## 0.0.22 - 2026-04-19
+
+### Fixed
+- Keep masked compact `entities.items` output `entity_id` values deterministic and unique when masking collapses multiple original entity IDs to the same masked value.
+- Apply the collision suffix only when compact masking is active and only to later colliding masked `entity_id` values in original logical `entity_id` sort order.
+- Preserve the first colliding masked `entity_id` unchanged; later colliding items use the stable `__masked_collision_N` suffix pattern, such as `device_tracker.pc_redacted_ipv4__masked_collision_2`.
+- Preserve the existing compact item structure and masking semantics: no new fields, no removed fields, no renamed fields, no `original_entity_id` or reverse lookup field, and no changes to the `important_attributes` whitelist or timestamp inclusion rules.
+- Keep `allow_sensitive_values=true` as the existing raw compact opt-out path with no masked-collision suffixing.
+- Keep this as a small compact export quality correction with no `raw_attributes`, no device/area/integration context, no relationship modeling, no UI/container change, no WebSocket, no service calls, and no write-capable Home Assistant operations.
+- Bump both the application version source and Home Assistant add-on metadata from `0.0.21` to `0.0.22`.
+
 ## 0.0.21 - 2026-04-19
 
 ### Changed
