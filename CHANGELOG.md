@@ -12,6 +12,15 @@ All notable changes to this project will be documented in this file.
 - Document the dashboard GET path investigation: no additional validated Core Proxy REST GET path was found beyond the existing Lovelace probes, so no dashboard fallback code or version bump was added.
 - Remove obsolete `docs/startvorlage für neuen chat-md`; the active official start guidance remains in the AI docs.
 
+## 0.0.16 - 2026-04-19
+
+### Fixed
+- Add read-only export-page clarity for the current compact masking mode and point users to the Home Assistant add-on configuration option `allow_sensitive_values`.
+- Mask hyphenated IPv4-like fragments in compact string fields, fixing the latest evidenced `friendly_name` leak shape while preserving existing dotted and underscored IPv4 masking.
+- Avoid MAC-like false positives in numeric measurement `state` values that include measurement hints such as `device_class`, `state_class`, or `unit_of_measurement`.
+- Preserve compact item structure, original logical `entity_id` sorting, export keys, category names, and the `important_attributes` whitelist.
+- Bump both the application version source and Home Assistant add-on metadata from `0.0.15` to `0.0.16`.
+
 ## 0.0.15 - 2026-04-19
 
 ### Changed

@@ -1,7 +1,7 @@
 # AI Current State
 
 ## Current version
-`0.0.15`
+`0.0.16`
 
 ## Export status currently observed
 - `system = partial`
@@ -26,8 +26,9 @@
 - `entities.items` contains the full eligible compact entity list derived from readable `/states` data, sorted by `entity_id`, and keeps the stable compact fields `entity_id`, derived `domain`, direct `state`, and direct plain-string `attributes.friendly_name` (or `null`).
 - Compact `state` and plain-string `friendly_name` redact literal IPv4 address values as `[redacted_ipv4]` after a targeted real-export sensitive-values check found local network address literals in those already exported compact fields.
 - Compact entity masking is now best-effort and enabled by default unless the add-on option `allow_sensitive_values` is explicitly set to boolean `true`; missing or invalid option values keep masking enabled.
-- Current compact masking also covers the latest evidenced follow-up categories: underscored IPv4 fragments in `entity_id`, MAC-like identifiers, SSID/Wi-Fi context states, geocoded/address context states, and person-derived tokens from `person` entities. Sorting still uses the original logical `entity_id` before output masking.
-- The export `warnings` list and existing export UI surface include a concise best-effort masking notice. Users must still manually review exports before sharing them; this is not complete anonymization.
+- Current compact masking also covers the latest evidenced follow-up categories: underscored and hyphenated IPv4-like fragments, MAC-like identifiers, SSID/Wi-Fi context states, geocoded/address context states, and person-derived tokens from `person` entities. Sorting still uses the original logical `entity_id` before output masking.
+- Plain MAC-like masking is narrowed for numeric measurement `state` values with measurement hints, so legitimate numeric sensor states are not accidentally corrupted.
+- The export `warnings` list and existing export UI surface include a concise best-effort masking notice. The export UI now also shows the current compact masking mode read-only and points users to the Home Assistant add-on configuration option `allow_sensitive_values`. Users must still manually review exports before sharing them; this is not complete anonymization.
 - `entities.items` can now include the second small `important_attributes` refinement, derived only from readable `/states.attributes` string values for `device_class`, `entity_category`, `state_class`, and `unit_of_measurement`.
 - `important_attributes` is omitted when none of the small whitelisted keys are present as strings; empty `important_attributes` objects are not emitted.
 - Current real 0.0.13 export observation confirms the basic `important_attributes` starter presence/omission pattern and real compact-item examples for `device_class`, `state_class`, and `unit_of_measurement`. The same export did not show `entity_category`; focused local helper validation covers that one-key refinement. Non-string whitelisted raw values being omitted remain pending because the compact export intentionally does not include raw attributes.

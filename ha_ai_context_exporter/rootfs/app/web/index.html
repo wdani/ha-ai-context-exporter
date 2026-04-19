@@ -20,6 +20,9 @@
           If <code>allow_sensitive_values</code> is enabled, raw compact values may be exported at your own risk;
           please open an issue for missed sensitive values.
         </p>
+        <p id="sensitive-masking-info" role="status" aria-live="polite">
+          Loading compact masking mode...
+        </p>
         <label for="export-mode">Mode</label>
         <select id="export-mode">
           <option value="quick">quick</option>
@@ -237,6 +240,20 @@
         }
       }
 
+      async function loadSensitiveMaskingInfo() {
+        const target = document.getElementById("sensitive-masking-info");
+        try {
+          const data = await fetchAddonJson("api/info");
+          const rawAllowed = data.allow_sensitive_values === true;
+          const mode = rawAllowed
+            ? "raw compact sensitive values allowed"
+            : "compact masking enabled";
+          target.textContent = `Current compact masking mode: ${mode}. Change this in the Home Assistant add-on configuration option allow_sensitive_values.`;
+        } catch {
+          target.textContent = "Compact masking mode unavailable. Check the Home Assistant add-on configuration option allow_sensitive_values.";
+        }
+      }
+
       async function loadSystemInfo() {
         const target = document.getElementById("system-info");
         try {
@@ -408,6 +425,7 @@
 
       applyStylesheet();
       runPreviewLoad(loadAppInfo);
+      runPreviewLoad(loadSensitiveMaskingInfo);
       runPreviewLoad(loadSystemInfo);
       runPreviewLoad(loadHaBaseInfo);
       runPreviewLoad(loadHaDetectInfo);

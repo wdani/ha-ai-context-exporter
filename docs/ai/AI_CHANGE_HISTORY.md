@@ -1,5 +1,12 @@
 # AI Change History
 
+## Version 0.0.16
+- Goal: small corrective follow-up for the 0.0.15 configurable compact masking step.
+- Real export confirmation: the latest 0.0.15 export was generated with `allow_sensitive_values=true`, which intentionally allowed raw compact values; using it as evidence showed hyphenated IPv4-like fragments in compact `friendly_name` values and a numeric measurement `state` shape that the current masker would falsely treat as MAC-like.
+- Key changes: add read-only export-page clarity for the current compact masking mode and the Home Assistant add-on configuration option source, mask hyphenated IPv4-like fragments, and skip plain MAC-like masking for numeric measurement `state` values with measurement hints.
+- Result: UI behavior is clearer without adding writable settings controls, hyphenated IPv4-like compact leaks are covered when masking is enabled, and legitimate numeric measurement states are preserved.
+- Scope guard: no writable settings UI, no config mutation endpoint, no full privacy redesign, no new export sections, no raw attributes, no relationship modeling, no sorting changes, no `important_attributes` whitelist changes, no WebSocket, no POST/template fallback, and no service calls.
+
 ## Version 0.0.15
 - Goal: add a small configurable follow-up for compact entity sensitive-value masking, based on the latest real 0.0.14 export.
 - Real export confirmation: 0.0.14 already masked literal dotted IPv4 values in compact `state` and one plain-string `friendly_name`, while additional sensitive-looking compact values remained in `entity_id`, `state`, and `friendly_name`.

@@ -23,6 +23,12 @@ _IPV4_UNDERSCORE_PATTERN = re.compile(
     r"(?:25[0-5]|2[0-4]\d|1?\d?\d)"
     r"(?!\d)"
 )
+_IPV4_HYPHEN_PATTERN = re.compile(
+    r"(?<!\d)"
+    r"(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)-){3}"
+    r"(?:25[0-5]|2[0-4]\d|1?\d?\d)"
+    r"(?!\d)"
+)
 _MAC_ADDRESS_PATTERN = re.compile(
     r"(?i)\b[0-9a-f]{2}([:-])[0-9a-f]{2}(?:\1[0-9a-f]{2}){4}\b"
 )
@@ -30,6 +36,9 @@ _MAC_UNDERSCORE_PATTERN = re.compile(
     r"(?i)(?<![0-9a-f])(?:[0-9a-f]{2}_){5}[0-9a-f]{2}(?![0-9a-f])"
 )
 _PLAIN_MAC_PATTERN = re.compile(r"(?i)\b[0-9a-f]{12}\b")
+_NUMERIC_STATE_PATTERN = re.compile(
+    r"(?i)^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$"
+)
 _COORDINATE_PAIR_PATTERN = re.compile(
     r"(?<!\d)-?\d{1,2}\.\d{4,}\s*,\s*-?\d{1,3}\.\d{4,}(?!\d)"
 )
@@ -173,6 +182,15 @@ def _state_can_be_context_masked(value: str) -> bool:
     return value.strip().lower() not in _UNKNOWN_STATE_VALUES
 
 
+def _state_looks_like_numeric_measurement(value: str, item: dict) -> bool:
+    important_attributes = item.get("important_attributes")
+    has_measurement_hint = isinstance(important_attributes, dict) and any(
+        isinstance(important_attributes.get(key), str)
+        for key in ("device_class", "state_class", "unit_of_measurement")
+    )
+    return has_measurement_hint and bool(_NUMERIC_STATE_PATTERN.fullmatch(value.strip()))
+
+
 def _mask_compact_sensitive_value(
     value: str,
     *,
@@ -194,9 +212,13 @@ def _mask_compact_sensitive_value(
 
     masked = _IPV4_ADDRESS_PATTERN.sub(ipv4_replacement, value)
     masked = _IPV4_UNDERSCORE_PATTERN.sub(ipv4_replacement, masked)
+    masked = _IPV4_HYPHEN_PATTERN.sub(ipv4_replacement, masked)
     masked = _MAC_ADDRESS_PATTERN.sub(mac_replacement, masked)
     masked = _MAC_UNDERSCORE_PATTERN.sub(mac_replacement, masked)
-    masked = _PLAIN_MAC_PATTERN.sub(mac_replacement, masked)
+    if not (
+        field == "state" and _state_looks_like_numeric_measurement(value, item)
+    ):
+        masked = _PLAIN_MAC_PATTERN.sub(mac_replacement, masked)
     masked = _COORDINATE_PAIR_PATTERN.sub(location_replacement, masked)
 
     if field == "entity_id" and entity_id.startswith("person."):
