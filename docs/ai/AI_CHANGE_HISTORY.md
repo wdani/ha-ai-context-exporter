@@ -1,5 +1,14 @@
 # AI Change History
 
+## Version 0.0.15
+- Goal: add a small configurable follow-up for compact entity sensitive-value masking, based on the latest real 0.0.14 export.
+- Real export confirmation: 0.0.14 already masked literal dotted IPv4 values in compact `state` and one plain-string `friendly_name`, while additional sensitive-looking compact values remained in `entity_id`, `state`, and `friendly_name`.
+- Key changes: extend best-effort compact masking to underscored IPv4 fragments in `entity_id`, MAC-like identifiers, SSID/Wi-Fi context states, geocoded/address context states, and person-derived tokens from `person` entities.
+- Configuration: add `allow_sensitive_values`, defaulting to `false`; only explicit boolean `true` allows compact sensitive values to remain unmasked, and missing or invalid option values keep masking enabled.
+- User notice: add concise best-effort masking warnings to export warnings, Markdown rendering, the existing export UI surface, and README text.
+- Result: compact entity output is privacy-safer by default while retaining the original item structure, original logical `entity_id` sort order, existing export keys, category names, and the `important_attributes` whitelist.
+- Scope guard: no full-export privacy redesign, no architecture change, no new export sections, no raw attributes, no relationship modeling, no WebSocket, no POST/template fallback, no service calls, no settings UI rebuild, and no export category redesign.
+
 ## Version 0.0.14
 - Goal: refresh outdated `important_attributes` validation notes against the real 0.0.13 compact export and perform a first targeted sensitive-values check for compact entity strings.
 - Real export confirmation: compact `entities.items` now includes real `unit_of_measurement` and `state_class` examples; `entity_category` was not present in the attached export, and non-string whitelisted raw values remain unconfirmed because raw attributes are intentionally not exported.

@@ -15,6 +15,11 @@
 
       <section aria-live="polite">
         <h2>Export Download</h2>
+        <p class="notice">
+          Sensitive-value masking is best-effort only. Review exports manually before sharing.
+          If <code>allow_sensitive_values</code> is enabled, raw compact values may be exported at your own risk;
+          please open an issue for missed sensitive values.
+        </p>
         <label for="export-mode">Mode</label>
         <select id="export-mode">
           <option value="quick">quick</option>

@@ -94,6 +94,7 @@ def render_export_markdown_bytes(payload: dict) -> bytes:
     section_order = [
         ("tool", "Tool"),
         ("environment", "Environment"),
+        ("warnings", "Warnings"),
         ("system", "System"),
         ("entities", "Entities"),
         ("areas_devices", "Areas & Devices"),
