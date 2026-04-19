@@ -1,5 +1,12 @@
 # AI Change History
 
+## Version 0.0.19
+- Goal: small follow-up for the ingress masking-status UX after the 0.0.18 reachable-again lifecycle step.
+- Pre-check finding: the merged baseline already had stable, reconnecting, and reconnected frontend states with read-only `/api/info` polling, but those states still rendered through one status paragraph and felt like one box changing text.
+- Key changes: split the ingress masking status into a persistent active-mode block and a separate temporary transition-status block; keep the active mode visible independently from reconnect/recovered lifecycle messaging.
+- Recovered UX: after reconnect, the transition block now clearly says the add-on is reachable again, confirms the now-active masking mode, and can show the previous active mode from frontend runtime memory when available.
+- Scope guard: frontend-only structure and styling change, no backend status payload change, no writable settings UI, no config mutation endpoint, no Supervisor restart control logic, no export payload behavior change, no WebSocket, no POST/PUT/PATCH/DELETE, and no service calls.
+
 ## Version 0.0.18
 - Goal: small follow-up for the ingress restart/reconnect masking-status UX after the 0.0.17 polling step.
 - Pre-check finding: the repo already had the current masking mode, read-only `/api/info` polling, and a visible reconnecting message while the backend is unavailable.

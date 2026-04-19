@@ -27,19 +27,58 @@ p {
   line-height: 1.45;
 }
 
-#sensitive-masking-info {
+.masking-status-layout {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0 0 1.5rem;
+}
+
+.masking-status-block {
   padding: 0.75rem;
   border-left: 4px solid #92b6ff;
   text-align: left;
   background: rgba(146, 182, 255, 0.12);
 }
 
-#sensitive-masking-info[data-status="reconnecting"] {
+.masking-status-block[hidden] {
+  display: none;
+}
+
+.masking-status-block h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.95rem;
+}
+
+.masking-status-title,
+.masking-status-detail {
+  margin: 0;
+}
+
+.masking-status-title {
+  font-weight: 700;
+}
+
+.masking-status-detail {
+  margin-top: 0.35rem;
+  font-size: 0.95rem;
+}
+
+#sensitive-masking-active[data-mode="off"] {
+  border-color: #ff9f6e;
+  background: rgba(255, 159, 110, 0.14);
+}
+
+#sensitive-masking-active[data-freshness="last-confirmed"] {
   border-color: #ffd166;
   background: rgba(255, 209, 102, 0.14);
 }
 
-#sensitive-masking-info[data-status="reconnected"] {
+#sensitive-masking-transition[data-status="reconnecting"] {
+  border-color: #ffd166;
+  background: rgba(255, 209, 102, 0.14);
+}
+
+#sensitive-masking-transition[data-status="reconnected"] {
   border-color: #7ee787;
   background: rgba(126, 231, 135, 0.14);
 }

@@ -20,9 +20,22 @@
           When privacy masking is turned off in the Home Assistant add-on configuration, raw compact values may be exported at your own risk.
           Please open an issue for missed sensitive values.
         </p>
-        <p id="sensitive-masking-info" role="status" aria-live="polite">
-          Loading privacy masking status...
-        </p>
+        <div id="sensitive-masking-status" class="masking-status-layout">
+          <div id="sensitive-masking-active" class="masking-status-block masking-status-block--active" data-mode="unknown">
+            <h3>Active privacy mode</h3>
+            <p id="sensitive-masking-active-mode" class="masking-status-title" role="status" aria-live="polite">
+              Loading active mode...
+            </p>
+            <p id="sensitive-masking-active-detail" class="masking-status-detail">
+              Reading Home Assistant add-on configuration...
+            </p>
+          </div>
+          <div id="sensitive-masking-transition" class="masking-status-block masking-status-block--transition" data-status="stable" hidden>
+            <h3>Update status</h3>
+            <p id="sensitive-masking-transition-title" class="masking-status-title" role="status" aria-live="polite"></p>
+            <p id="sensitive-masking-transition-detail" class="masking-status-detail"></p>
+          </div>
+        </div>
         <label for="export-mode">Mode</label>
         <select id="export-mode">
           <option value="quick">quick</option>
@@ -91,6 +104,7 @@
       };
       let maskingStatusRefreshTimer = null;
       let maskingStatusState = MASKING_STATUS_STATES.STABLE;
+      let lastConfirmedSensitiveValuesAllowed = null;
 
       function getAddonBaseUrl() {
         const basePath = window.location.pathname.endsWith("/")
@@ -257,37 +271,100 @@
         maskingStatusRefreshTimer = window.setTimeout(loadSensitiveMaskingInfo, delayMs);
       }
 
-      function buildSensitiveMaskingInfoMessage(data, statusState) {
-        const rawAllowed = data.allow_sensitive_values === true;
-        const primary = rawAllowed
-          ? "Privacy masking is off for compact entity values."
-          : "Privacy masking is on for compact entity values.";
-        const detail = rawAllowed
-          ? "Exports may include raw names, network details, and device identifiers."
-          : "Some sensitive-looking compact values are hidden before export.";
-
-        if (statusState === MASKING_STATUS_STATES.RECONNECTED) {
-          return `The add-on is reachable again. The current Home Assistant add-on configuration has been read, and this masking mode is now active: ${primary} ${detail} Review every export before sharing.`;
+      function getSensitiveMaskingModeCopy(rawAllowed) {
+        if (rawAllowed) {
+          return {
+            label: "Privacy masking is off",
+            detail: "Raw compact values may be exported, including names, network details, and device identifiers.",
+          };
         }
 
-        return `Current active mode: ${primary} ${detail} Change this in the Home Assistant add-on configuration (allow_sensitive_values). Review every export before sharing.`;
+        return {
+          label: "Privacy masking is on",
+          detail: "Some sensitive-looking compact values are hidden before export.",
+        };
+      }
+
+      function renderSensitiveMaskingActiveMode(rawAllowed, freshness) {
+        const block = document.getElementById("sensitive-masking-active");
+        const modeTarget = document.getElementById("sensitive-masking-active-mode");
+        const detailTarget = document.getElementById("sensitive-masking-active-detail");
+
+        if (rawAllowed === null) {
+          block.dataset.mode = "unknown";
+          block.dataset.freshness = "unknown";
+          modeTarget.textContent = "Active mode not confirmed yet";
+          detailTarget.textContent = "Waiting for the first successful read from /api/info.";
+          return;
+        }
+
+        const copy = getSensitiveMaskingModeCopy(rawAllowed);
+        const isLastConfirmed = freshness === "last-confirmed";
+        block.dataset.mode = rawAllowed ? "off" : "on";
+        block.dataset.freshness = freshness;
+        modeTarget.textContent = `${isLastConfirmed ? "Last confirmed mode" : "Current active mode"}: ${copy.label}`;
+        detailTarget.textContent = isLastConfirmed
+          ? `${copy.detail} The add-on is temporarily unavailable, so this will refresh when /api/info is reachable again.`
+          : `${copy.detail} Source: Home Assistant add-on configuration option allow_sensitive_values. Review every export before sharing.`;
+      }
+
+      function renderSensitiveMaskingTransition(statusState, currentRawAllowed, previousRawAllowed) {
+        const panel = document.getElementById("sensitive-masking-transition");
+        const titleTarget = document.getElementById("sensitive-masking-transition-title");
+        const detailTarget = document.getElementById("sensitive-masking-transition-detail");
+
+        panel.dataset.status = statusState;
+
+        if (statusState === MASKING_STATUS_STATES.STABLE) {
+          panel.hidden = true;
+          titleTarget.textContent = "";
+          detailTarget.textContent = "";
+          return;
+        }
+
+        panel.hidden = false;
+
+        if (statusState === MASKING_STATUS_STATES.RECONNECTING) {
+          titleTarget.textContent = "Waiting for the add-on to come back";
+          detailTarget.textContent = lastConfirmedSensitiveValuesAllowed === null
+            ? "Home Assistant may be applying an external add-on configuration change. The active mode will appear after /api/info responds."
+            : "Home Assistant may be applying an external add-on configuration change. The active-mode block is showing the last confirmed mode until /api/info responds again.";
+          return;
+        }
+
+        const currentCopy = getSensitiveMaskingModeCopy(currentRawAllowed);
+        let contrast = `Now active: ${currentCopy.label}.`;
+
+        if (previousRawAllowed !== null) {
+          const previousCopy = getSensitiveMaskingModeCopy(previousRawAllowed);
+          contrast = previousRawAllowed === currentRawAllowed
+            ? `Previous active mode: ${previousCopy.label}. Now active: ${currentCopy.label}.`
+            : `Previous active mode: ${previousCopy.label}. Updated mode now active: ${currentCopy.label}.`;
+        }
+
+        titleTarget.textContent = "Add-on reachable again";
+        detailTarget.textContent = `${contrast} The current Home Assistant add-on configuration has been read.`;
       }
 
       async function loadSensitiveMaskingInfo() {
-        const target = document.getElementById("sensitive-masking-info");
         try {
           const data = await fetchAddonJson("api/info");
+          const rawAllowed = data.allow_sensitive_values === true;
+          const previousRawAllowed = maskingStatusState === MASKING_STATUS_STATES.RECONNECTING
+            ? lastConfirmedSensitiveValuesAllowed
+            : null;
           const nextState = maskingStatusState === MASKING_STATUS_STATES.RECONNECTING
             ? MASKING_STATUS_STATES.RECONNECTED
             : MASKING_STATUS_STATES.STABLE;
           maskingStatusState = nextState;
-          target.dataset.status = nextState;
-          target.textContent = buildSensitiveMaskingInfoMessage(data, nextState);
+          renderSensitiveMaskingActiveMode(rawAllowed, "current");
+          renderSensitiveMaskingTransition(nextState, rawAllowed, previousRawAllowed);
+          lastConfirmedSensitiveValuesAllowed = rawAllowed;
           scheduleSensitiveMaskingInfoRefresh(MASKING_STATUS_REFRESH_MS);
         } catch {
           maskingStatusState = MASKING_STATUS_STATES.RECONNECTING;
-          target.dataset.status = MASKING_STATUS_STATES.RECONNECTING;
-          target.textContent = "The add-on is restarting or reconnecting. If you changed privacy masking in the Home Assistant add-on configuration, Home Assistant is applying that external change now. This page is waiting for the add-on to come back and will refresh the privacy masking status automatically.";
+          renderSensitiveMaskingActiveMode(lastConfirmedSensitiveValuesAllowed, "last-confirmed");
+          renderSensitiveMaskingTransition(MASKING_STATUS_STATES.RECONNECTING, null, lastConfirmedSensitiveValuesAllowed);
           scheduleSensitiveMaskingInfoRefresh(RECONNECT_REFRESH_MS);
         }
       }
