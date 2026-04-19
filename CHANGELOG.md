@@ -12,6 +12,15 @@ All notable changes to this project will be documented in this file.
 - Document the dashboard GET path investigation: no additional validated Core Proxy REST GET path was found beyond the existing Lovelace probes, so no dashboard fallback code or version bump was added.
 - Remove obsolete `docs/startvorlage für neuen chat-md`; the active official start guidance remains in the AI docs.
 
+## 0.0.12 - 2026-04-19
+
+### Changed
+- Add the second small `important_attributes` refinement to compact `entities.items` by whitelisting string `entity_category` values from readable `/states.attributes`.
+- Keep the existing compact entity fields unchanged: `entity_id`, derived `domain`, direct `state`, and direct plain-string `friendly_name`.
+- Keep the existing `important_attributes` behavior unchanged for `device_class`, `state_class`, and `unit_of_measurement`; omit `important_attributes` entirely when no whitelisted string values are present.
+- Keep the export read-only and GET-only with no `raw_attributes`, no relationship modeling, no dashboard/areas/devices/integrations changes, no YAML/file parsing, and no payload-wide expansion.
+- Bump version from `0.0.11` to `0.0.12`.
+
 ## 0.0.11 - 2026-04-19
 
 ### Changed

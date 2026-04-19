@@ -5,6 +5,7 @@ from __future__ import annotations
 ENTITY_ITEMS_LIMIT = 50
 IMPORTANT_ATTRIBUTE_KEYS = (
     "device_class",
+    "entity_category",
     "state_class",
     "unit_of_measurement",
 )
