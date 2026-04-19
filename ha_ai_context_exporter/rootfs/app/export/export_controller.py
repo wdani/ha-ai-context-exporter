@@ -232,6 +232,19 @@ def build_export_payload(
         active_sections["integrations"] = section
 
     data_completeness, warnings = _evaluate_completeness(active_sections)
+    allow_sensitive_values = providers.get("allow_sensitive_values", lambda: False)()
+    if allow_sensitive_values is True:
+        warnings.append(
+            "allow_sensitive_values=true permits raw compact sensitive values. "
+            "Export at your own risk, review before sharing, and open an issue "
+            "if unexpected masking gaps appear."
+        )
+    else:
+        warnings.append(
+            "Sensitive-value masking is best-effort only; missed values can happen. "
+            "Review exports before sharing and open an issue if sensitive values "
+            "remain."
+        )
     any_readable = any(section.get("readability") for section in active_sections.values())
     payload["environment"] = _build_environment(access_preview, any_readable)
 

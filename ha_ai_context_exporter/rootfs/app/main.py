@@ -34,6 +34,7 @@ REQUEST_TIMEOUT_SECONDS = 5.0
 HOST = "0.0.0.0"
 PORT = int(os.getenv("PORT", "8099"))
 WEB_DIR = Path(__file__).resolve().parent / "web"
+ADDON_OPTIONS_PATH = Path("/data/options.json")
 APP_INFO = {
     "name": APP_NAME,
     "version": APP_VERSION,
@@ -44,6 +45,21 @@ APP_INFO = {
 def get_app_info() -> dict:
     """Return basic app metadata for reuse in other endpoints."""
     return dict(APP_INFO)
+
+
+def load_addon_options() -> dict:
+    """Load Home Assistant add-on options with safe defaults on any problem."""
+    try:
+        payload = json.loads(ADDON_OPTIONS_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+    return payload if isinstance(payload, dict) else {}
+
+
+def allow_sensitive_values() -> bool:
+    """Return true only when the add-on option is explicitly boolean true."""
+    return load_addon_options().get("allow_sensitive_values") is True
 
 
 
@@ -371,7 +387,10 @@ def get_ha_domain_preview(include_entity_items: bool = False) -> dict:
                 if domain:
                     domain_counts[domain] = domain_counts.get(domain, 0) + 1
             if include_entity_items:
-                entity_items = build_compact_entity_items(states_payload)
+                entity_items = build_compact_entity_items(
+                    states_payload,
+                    allow_sensitive_values=allow_sensitive_values(),
+                )
         break
 
     top_domains = sorted(domain_counts.items(), key=lambda item: item[1], reverse=True)[:10]
@@ -889,6 +908,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 "get_dashboard_preview": get_ha_dashboard_preview,
                 "get_domain_preview": lambda: get_ha_domain_preview(include_entity_items=True),
                 "get_metadata_preview": get_ha_metadata_preview,
+                "allow_sensitive_values": allow_sensitive_values,
                 "addon_slug": APP_SLUG,
             },
         )
