@@ -1,5 +1,13 @@
 # AI Change History
 
+## 2026-04-19 - Ingress UI container architecture clarification
+- Goal: document the current and future role of Home Assistant Ingress as the UI container without performing a migration or hidden architecture switch.
+- Finding: Ingress remains appropriate for the current small read-only exporter UI, but recent ingress UX work around active privacy mode, reconnect, and recovered-state visibility is a warning signal that the UI shell should be treated consciously rather than assumed to be the permanent product home.
+- Clarification: separate short-term frontend/UX implementation friction from structural ingress/container/lifecycle limitations such as add-on restarts, temporary page unreachability, Supervisor-level lifecycle messages, and page-local runtime memory.
+- Current stance: keep Ingress now as a bounded tactical UI shell; no custom panel, second frontend container, external frontend, iframe strategy, WebSocket transport, backend redesign, or migration commitment is introduced.
+- Reevaluation triggers: revisit the UI container only through a later architecture task if ingress-specific lifecycle work keeps growing, richer durable UI workflows become necessary, Supervisor lifecycle orchestration becomes a product requirement, or future relationship/dashboard/analyzer/file-context flows outgrow a small ingress page.
+- Versioning: no version bump because this is documentation-only and does not change shipped runtime behavior.
+
 ## Version 0.0.20
 - Goal: small follow-up correction for the merged 0.0.19 ingress split, focused on stronger visual hierarchy rather than backend behavior.
 - Pre-check finding: the merged baseline already had separate active-mode and transition-status blocks, previous-mode runtime memory, and read-only `/api/info` polling, but the active-mode block still carried strong whole-block mode coloring and the transition block remained a peer surface below it.
