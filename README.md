@@ -1,3 +1,20 @@
+# HA AI Context Exporter — Legacy
+
+> This repository is no longer actively developed and is kept for historical reference.
+
+HA AI Context Exporter explored an exporter-based approach for collecting Home Assistant context for AI-assisted analysis.
+
+The project direction has moved to the newer **HA Context Explorer Probe** approach, which uses a native Home Assistant custom integration/panel, strict read-only data access, privacy-first defaults, and a stronger structure/relationship/logic model.
+
+New project:
+https://github.com/wdani/ha-context-explorer-probe
+
+This repository should be treated as legacy. It may still be useful for reference, but new development is expected to continue in the newer context explorer project.
+
+---
+
+## Original project summary
+
 HA AI Context Exporter is a helper tool for Home Assistant users who want to analyze and improve their system with the help of AI.
 
 The tool collects relevant system context such as entities, areas, devices, automations and configuration structure and exports it in a structured format.
